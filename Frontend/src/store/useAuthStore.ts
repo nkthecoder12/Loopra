@@ -6,6 +6,7 @@ export interface User {
   email: string;
   role: 'USER' | 'DRIVER' | 'ADMIN';
   profileImage?: string;
+  isVerified?: boolean;
 }
 
 interface AuthState {

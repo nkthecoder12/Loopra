@@ -17,7 +17,14 @@ const getRide = async (req, res, next) => {
     if (!ride) {
       return res.status(404).json({ success: false, message: "Ride not found" });
     }
-    return res.status(200).json({ success: true, ride });
+
+    const rideObj = ride.toObject();
+    // Only the passenger (userId) or admin should see the OTP. Hide it from drivers.
+    if (req.user.role !== "ADMIN" && req.user.id !== ride.userId.toString()) {
+      delete rideObj.otp;
+    }
+
+    return res.status(200).json({ success: true, ride: rideObj });
   } catch (err) {
     next(err);
   }
@@ -134,11 +141,22 @@ const acceptRide = async (req, res, next) => {
       return res.status(403).json({ success: false, message: "Driver not approved" });
     }
 
-    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    const existingRide = await Ride.findById(req.params.id);
+    if (!existingRide) {
+      return res.status(404).json({ success: false, message: "Ride not found" });
+    }
 
-    // Atomic: take ride only if still REQUESTED and no driver assigned
+    const otp = existingRide.otp || Math.floor(1000 + Math.random() * 9000).toString();
+
+    // Atomic: take ride only if still REQUESTED and no driver assigned, OR if already assigned to this driver
     const ride = await Ride.findOneAndUpdate(
-      { _id: req.params.id, status: RIDE_STATUS.REQUESTED, driverId: null },
+      {
+        _id: req.params.id,
+        $or: [
+          { status: RIDE_STATUS.REQUESTED, driverId: null },
+          { status: RIDE_STATUS.DRIVER_ASSIGNED, driverId: driver._id }
+        ]
+      },
       { $set: { status: RIDE_STATUS.DRIVER_ASSIGNED, driverId: driver._id, otp } },
       { new: true }
     );
@@ -161,14 +179,19 @@ const acceptRide = async (req, res, next) => {
           vehicle: driver.vehicle,
         },
       });
-      // Send OTP securely to the rider's room
-      io.to(`user_${ride.userId.toString()}`).emit("ride-otp", {
+      // Send OTP securely to the ride room
+      io.to(`ride_${ride._id.toString()}`).emit("ride-otp", {
         rideId: ride._id,
         otp,
       });
     }
 
-    return res.status(200).json({ success: true, message: "Ride accepted", ride });
+    const rideObj = ride.toObject();
+    if (req.user.role !== "ADMIN" && req.user.id !== ride.userId.toString()) {
+      delete rideObj.otp;
+    }
+
+    return res.status(200).json({ success: true, message: "Ride accepted", ride: rideObj });
   } catch (err) {
     next(err);
   }

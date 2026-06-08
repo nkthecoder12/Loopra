@@ -18,7 +18,7 @@ const createAdvanceRide = async (userId, rideAId, data) => {
     const rideA = await Ride.findOne({
       _id: rideAId,
       userId,
-      status: { $in: [RIDE_STATUS.DRIVER_ASSIGNED, RIDE_STATUS.ONGOING] }
+      status: { $in: [RIDE_STATUS.DRIVER_ASSIGNED, RIDE_STATUS.ONGOING, RIDE_STATUS.COMPLETED] }
     }).session(session);
 
     if (!rideA) {

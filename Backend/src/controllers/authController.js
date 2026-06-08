@@ -84,7 +84,7 @@ const login = async (req, res) => {
       success: true,
       message: "Login successful",
       token,
-      user: { id: user._id, name: user.name, email: user.email, role: user.role, profileImage: user.profileImage }
+      user: { id: user._id, name: user.name, email: user.email, role: user.role, profileImage: user.profileImage, isVerified: user.isVerified }
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: "Error logging in", error: error.message });

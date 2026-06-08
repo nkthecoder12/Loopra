@@ -15,7 +15,8 @@ export default function DriverOnboardingPage() {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
-    vehicleDetails: ''
+    vehicleType: 'economy',
+    vehicleNumber: ''
   });
 
   const [files, setFiles] = useState<{
@@ -76,7 +77,8 @@ export default function DriverOnboardingPage() {
       const data = new FormData();
       data.append('name', formData.name);
       data.append('phone', formData.phone);
-      data.append('vehicleDetails', formData.vehicleDetails);
+      data.append('vehicleType', formData.vehicleType);
+      data.append('vehicleNumber', formData.vehicleNumber);
       data.append('license', files.license);
       data.append('rc', files.rc);
 
@@ -156,12 +158,27 @@ export default function DriverOnboardingPage() {
                 required 
               />
             </div>
-            <Input 
-              label="Vehicle Details (Make, Model, Year)" 
-              value={formData.vehicleDetails}
-              onChange={e => setFormData({ ...formData, vehicleDetails: e.target.value })}
-              required 
-            />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-sm font-bold text-gray-700">Vehicle Type</label>
+                <select
+                  value={formData.vehicleType}
+                  onChange={e => setFormData({ ...formData, vehicleType: e.target.value })}
+                  className="w-full h-12 px-4 border border-gray-200 rounded-xl outline-none focus:border-primary transition-colors bg-white text-sm"
+                  required
+                >
+                  <option value="economy">Economy</option>
+                  <option value="premium">Premium</option>
+                  <option value="suv">SUV</option>
+                </select>
+              </div>
+              <Input 
+                label="Vehicle Number" 
+                value={formData.vehicleNumber}
+                onChange={e => setFormData({ ...formData, vehicleNumber: e.target.value })}
+                required 
+              />
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -243,7 +260,7 @@ export default function DriverOnboardingPage() {
 
           <Button 
             className="w-full h-14 text-lg" 
-            disabled={status === 'UPLOADING' || !files.license || !files.rc || !formData.name || !formData.phone || !formData.vehicleDetails}
+            disabled={status === 'UPLOADING' || !files.license || !files.rc || !formData.name || !formData.phone || !formData.vehicleType || !formData.vehicleNumber}
           >
             Submit Application
           </Button>

@@ -29,11 +29,15 @@ function getAllowedOrigins() {
 function isOriginAllowed(origin) {
   if (!origin) return true;
 
-  const allowed = getAllowedOrigins();
-  if (allowed.includes(origin)) return true;
+  const lowerOrigin = origin.toLowerCase().trim().replace(/\/$/, "");
 
-  // Vercel preview deployments: https://<project>-<hash>.vercel.app
-  if (/^https:\/\/[\w-]+\.vercel\.app$/.test(origin)) return true;
+  if (lowerOrigin === "https://loopra-gamma.vercel.app") return true;
+
+  // Vercel preview/production deployments
+  if (/^https:\/\/[\w.-]+\.vercel\.app$/.test(lowerOrigin)) return true;
+
+  const allowed = getAllowedOrigins().map(o => o.toLowerCase().trim().replace(/\/$/, ""));
+  if (allowed.includes(lowerOrigin)) return true;
 
   return false;
 }
@@ -41,20 +45,27 @@ function isOriginAllowed(origin) {
 const corsOptions = {
   credentials: true,
   origin(origin, callback) {
+    if (!origin) {
+      return callback(null, false);
+    }
     if (isOriginAllowed(origin)) {
-      callback(null, true);
+      callback(null, origin);
     } else {
-      callback(new Error(`CORS blocked for origin: ${origin}`));
+      callback(new Error(`CORS blocked: ${origin} not allowed`));
     }
   },
+  optionsSuccessStatus: 200,
 };
 
 const socketCorsOptions = {
   origin(origin, callback) {
+    if (!origin) {
+      return callback(null, false);
+    }
     if (isOriginAllowed(origin)) {
-      callback(null, true);
+      callback(null, origin);
     } else {
-      callback(new Error(`Socket CORS blocked for origin: ${origin}`));
+      callback(new Error(`Socket CORS blocked: ${origin} not allowed`));
     }
   },
   credentials: true,

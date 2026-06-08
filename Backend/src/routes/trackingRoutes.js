@@ -16,5 +16,10 @@ router.get(
   authMiddleware,
   trackingController.getPathHistory
 );
+router.get(
+  "/:rideId/history",
+  authMiddleware,
+  trackingController.getPathHistory
+);
 
 module.exports = router;

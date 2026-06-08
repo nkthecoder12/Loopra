@@ -481,7 +481,9 @@ export default function DashboardPage() {
                     </div>
                     <div>
                       <p className="font-bold">{activeRide.driver.name}</p>
-                      <p className="text-sm text-surface/60">{activeRide.driver.vehicleDetails || activeRide.driver.vehicle}</p>
+                      <p className="text-sm text-surface/60">
+                        {activeRide.driver.vehicleDetails || (activeRide.driver.vehicle ? (typeof activeRide.driver.vehicle === 'object' ? `${(activeRide.driver.vehicle as any).type} (${(activeRide.driver.vehicle as any).number})` : activeRide.driver.vehicle) : '')}
+                      </p>
                       <p className="text-xs text-surface/50 mt-1">{activeRide.driver.phone}</p>
                     </div>
                   </div>

@@ -19,8 +19,10 @@ const {
 router.post("/estimate", authMiddleware, estimateRide);
 router.get("/active", authMiddleware, roleMiddleware("USER"), getActiveRide);
 
+const verifyGuard = require("../middlewares/verifyGuard");
+
 // Issue #10: book is the create route
-router.post("/book", authMiddleware, roleMiddleware("USER"), createRide);
+router.post("/book", authMiddleware, roleMiddleware("USER"), verifyGuard, createRide);
 
 // Parameterized routes
 router.get("/:id", authMiddleware, roleMiddleware("USER", "DRIVER"), getRide);

@@ -5,7 +5,10 @@ const Driver = require("../models/Driver");
 const bookAdvanceRide = async (req, res, next) => {
   try {
     const userId = req.user.id || req.user.userId;
-    const { rideAId, pickupLocation, dropLocation, scheduledAt } = req.body;
+    const rideAId = req.body.rideAId || req.body.parentRideId;
+    const pickupLocation = req.body.pickupLocation || req.body.pickup;
+    const dropLocation = req.body.dropLocation || req.body.drop;
+    const scheduledAt = req.body.scheduledAt || new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
     
     if (!rideAId || !pickupLocation || !dropLocation || !scheduledAt) {
       return res.status(400).json({ success: false, message: "Missing required fields" });

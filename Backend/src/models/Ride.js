@@ -148,11 +148,10 @@ const rideSchema = new mongoose.Schema(
   }
 );
 
-rideSchema.pre('save', function(next) {
+rideSchema.pre('save', function() {
   if (this.isModified('status')) {
     this.stateVersion += 1;
   }
-  next();
 });
 
 // Atomic double-booking prevention index

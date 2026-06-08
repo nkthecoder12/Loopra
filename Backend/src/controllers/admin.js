@@ -75,6 +75,11 @@ const approveDriver = async (req, res) => {
       return res.status(404).json({ success: false, message: "Driver not found" });
     }
 
+    // Update corresponding user's role to "DRIVER"
+    if (driver.userId) {
+      await User.findByIdAndUpdate(driver.userId._id || driver.userId, { role: "DRIVER" });
+    }
+
     // Trigger Onboarding Approval Alert
     if (driver.userId && driver.userId.email) {
       NotificationService.notifyDriverOnboarding(driver.userId.email, "APPROVED").catch((err) => {
@@ -106,6 +111,11 @@ const rejectDriver = async (req, res) => {
 
     if (!driver) {
       return res.status(404).json({ success: false, message: "Driver not found" });
+    }
+
+    // Revert/set corresponding user's role to "USER"
+    if (driver.userId) {
+      await User.findByIdAndUpdate(driver.userId._id || driver.userId, { role: "USER" });
     }
 
     // Trigger Onboarding Rejection Alert

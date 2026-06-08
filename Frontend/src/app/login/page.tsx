@@ -41,7 +41,16 @@ export default function LoginPage() {
       const decoded = decodeToken(token);
       
       if (decoded) {
-        setCredentials({ id: decoded.id, role: decoded.role as any, email }, token);
+        const isVerified = response.user.isVerified;
+        setCredentials({ id: decoded.id, role: decoded.role as any, email, isVerified }, token);
+        
+        if (!isVerified) {
+          sessionStorage.setItem('signup_email', email);
+          addNotification('info', 'Please verify your email first.');
+          router.push('/otp');
+          return;
+        }
+
         addNotification('success', 'Logged in successfully!');
         
         // Redirect based on role

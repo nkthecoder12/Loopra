@@ -13,7 +13,7 @@ export interface DriverInfo {
   name: string;
   phone: string;
   vehicleDetails: string;
-  vehicle?: string;
+  vehicle?: string | { type: string; number: string };
   location?: { lat: number; lng: number };
 }
 

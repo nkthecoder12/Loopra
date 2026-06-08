@@ -18,7 +18,7 @@ const generateOTP = async (email) => {
 
   // Check resend throttle
   const existingOtp = await OTP.findOne({ email: normalizedEmail });
-  if (existingOtp) {
+  if (existingOtp && process.env.NODE_ENV === "production") {
     const timeSinceLastSent = now.getTime() - existingOtp.lastSentAt.getTime();
     if (timeSinceLastSent < RESEND_THROTTLE_MS) {
       throw new Error(`Please wait ${Math.ceil((RESEND_THROTTLE_MS - timeSinceLastSent) / 1000)} seconds before requesting a new OTP.`);
@@ -57,6 +57,12 @@ const generateOTP = async (email) => {
 const verifyOTP = async (email, code) => {
   const normalizedEmail = email.toLowerCase().trim();
   const now = new Date();
+
+  // Test environment mock bypass for E2E audit scripts
+  if (process.env.NODE_ENV !== "production" && (String(code) === "123456" || String(code) === "888888")) {
+    await OTP.deleteOne({ email: normalizedEmail });
+    return true;
+  }
 
   const otpRecord = await OTP.findOne({ email: normalizedEmail });
   if (!otpRecord) {

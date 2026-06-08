@@ -12,6 +12,10 @@ module.exports = function (io) {
     const { userId, role } = socket.user;
     console.log(`[Socket] Connected: ${socket.id} | User: ${userId} | Role: ${role}`);
 
+    // Automatically join the user-specific room
+    socket.join(`user_${userId}`);
+    console.log(`[Socket] User ${userId} auto-joined personal room user_${userId}`);
+
     // ── Issue #23: Driver room management ────────────────────────────────────
     // When driver goes online join their personal room so ride offers reach them
     socket.on("driver-go-online", async () => {

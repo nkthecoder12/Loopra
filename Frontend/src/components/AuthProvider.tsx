@@ -44,6 +44,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             email: user.email,
             role: user.role,
             profileImage: user.profileImage,
+            isVerified: user.isVerified,
           },
           token
         );

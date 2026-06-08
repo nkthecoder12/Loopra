@@ -19,6 +19,6 @@ authrouter.post("/send-otp", sendOtpLimiter, sendotp);
 authrouter.post("/verifyotp", verifyOtpLimiter, verifyOtp);
 authrouter.post("/verify-otp", verifyOtpLimiter, verifyOtp);
 
-authrouter.post("/uploadprofileimage", upload.single("profileImage"), uploadProfileImage);
+authrouter.post("/uploadprofileimage", authMiddleware, upload.single("profileImage"), uploadProfileImage);
 
 module.exports = authrouter;

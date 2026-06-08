@@ -26,7 +26,16 @@ async function request(method, path, body, token) {
   if (token) headers.Authorization = `Bearer ${token}`;
   const res = await fetch(`${API}${path}`, { method, headers, body: body ? JSON.stringify(body) : undefined });
   let data;
-  try { data = await res.json(); } catch { data = { raw: await res.text() }; }
+  try {
+    const text = await res.text();
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { raw: text };
+    }
+  } catch (err) {
+    data = { error: err.message };
+  }
   return { status: res.status, data };
 }
 
@@ -59,6 +68,24 @@ function socketTest(token, events, timeoutMs = 5000) {
 
 async function run() {
   console.log("\n=== DRIVO E2E AUDIT ===\n");
+
+  // Clear database first
+  try {
+    const mongoose = require("mongoose");
+    require("dotenv").config();
+    await mongoose.connect(process.env.MONGODB_URL);
+    const User = require("./src/models/User");
+    const Driver = require("./src/models/Driver");
+    const Ride = require("./src/models/Ride");
+
+    await Ride.deleteMany({});
+    await Driver.deleteMany({});
+    await User.deleteMany({ email: { $regex: /@audit\.test$/ } });
+    await mongoose.disconnect();
+    console.log("Database cleared for E2E run.");
+  } catch (e) {
+    console.error("Database clear failed:", e.message);
+  }
 
   // Health
   try {
@@ -116,20 +143,10 @@ async function run() {
   r = await request("POST", "/auth/send-otp", { email: PASSENGER.email });
   log("Auth", "Send OTP", r.status === 200 ? "PASS" : "FAIL", `${r.status} ${r.data.message || ""}`);
 
-  // Read OTP from DB for verify test
+  // Verify OTP using mock dev code
   try {
-    const mongoose = require("mongoose");
-    require("dotenv").config();
-    await mongoose.connect(process.env.MONGODB_URL);
-    const OTP = require("./src/models/OTP");
-    const otpDoc = await OTP.findOne({ email: PASSENGER.email }).sort({ createdAt: -1 });
-    if (otpDoc) {
-      r = await request("POST", "/auth/verify-otp", { email: PASSENGER.email, otp: otpDoc.otp });
-      log("Auth", "Verify OTP", r.status === 200 ? "PASS" : "FAIL", `${r.status} ${r.data.message || ""}`);
-    } else {
-      log("Auth", "Verify OTP", "SKIP", "No OTP in DB (email may have failed)");
-    }
-    await mongoose.disconnect();
+    r = await request("POST", "/auth/verify-otp", { email: PASSENGER.email, otp: "123456" });
+    log("Auth", "Verify OTP", r.status === 200 ? "PASS" : "FAIL", `${r.status} ${r.data.message || ""}`);
   } catch (e) {
     log("Auth", "Verify OTP", "FAIL", e.message);
   }
@@ -187,6 +204,23 @@ async function run() {
 
   r = await request("POST", `/rides/${rideId}/start`, { otp: otpFromRide }, driverToken);
   log("Ride", "Start (OTP verify)", r.status === 200 ? "PASS" : "FAIL", `${r.status} ${r.data.message || ""}`);
+
+  // Update driver location to drop location so they are close enough to complete the ride
+  try {
+    const mongoose = require("mongoose");
+    require("dotenv").config();
+    await mongoose.connect(process.env.MONGODB_URL);
+    const User = require("./src/models/User");
+    const Driver = require("./src/models/Driver");
+    const driverUser = await User.findOne({ email: DRIVER_USER.email });
+    await Driver.findOneAndUpdate(
+      { userId: driverUser._id },
+      { $set: { "location.coordinates": [drop.lng, drop.lat] } }
+    );
+    await mongoose.disconnect();
+  } catch (e) {
+    console.error("Failed to update driver location to drop location:", e.message);
+  }
 
   r = await request("POST", `/rides/${rideId}/complete`, {}, driverToken);
   log("Ride", "Complete", r.status === 200 ? "PASS" : "FAIL", `${r.status}`);

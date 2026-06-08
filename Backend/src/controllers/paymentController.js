@@ -84,6 +84,7 @@ const createPaymentOrder = async (req, res) => {
       key: process.env.RAZORPAY_KEY_ID,
     });
   } catch (error) {
+    console.error("[createPaymentOrder ERROR]:", error);
     await session.abortTransaction();
     session.endSession();
     return res.status(500).json({ success: false, message: "Failed to create payment order", error: error.message });
@@ -221,20 +222,24 @@ const verifyAdvancePayment = async (req, res) => {
       return res.status(400).json({ success: false, message: "Advance payment already processed or ride not found" });
     }
 
-    const parentRide = await Ride.findById(ride.parentRideId).session(session);
+    const parentRide = await Ride.findById(ride.parentRideId).populate("driverId").session(session);
     await session.commitTransaction();
     session.endSession();
 
     const io = req.app.get("io");
     if (io && parentRide && parentRide.driverId) {
-      io.to(`driver_${parentRide.driverId.toString()}`).emit("combined-ride-offer", {
-        primaryRideId: parentRide._id,
-        secondaryRideId: ride._id,
-        pickupLocation: ride.pickupLocation,
-        dropLocation: ride.dropLocation,
-        scheduledAt: ride.scheduledAt,
-        timeoutAt: new Date(Date.now() + 30000),
-      });
+      const driverDoc = parentRide.driverId;
+      const driverUserId = driverDoc.userId ? driverDoc.userId.toString() : null;
+      if (driverUserId) {
+        io.to(`driver_${driverUserId}`).emit("combined-ride-offer", {
+          primaryRideId: parentRide._id,
+          secondaryRideId: ride._id,
+          pickupLocation: ride.pickupLocation,
+          dropLocation: ride.dropLocation,
+          scheduledAt: ride.scheduledAt,
+          timeoutAt: new Date(Date.now() + 30000),
+        });
+      }
 
       setTimeout(async () => {
         try {
@@ -293,16 +298,20 @@ const razorpayWebhook = async (req, res) => {
       await ride.save();
 
       const io = req.app.get("io");
-      const parentRide = await Ride.findById(ride.parentRideId);
+      const parentRide = await Ride.findById(ride.parentRideId).populate("driverId");
       if (io && parentRide && parentRide.driverId) {
-        io.to(`driver_${parentRide.driverId.toString()}`).emit("combined-ride-offer", {
-          primaryRideId: parentRide._id,
-          secondaryRideId: ride._id,
-          pickupLocation: ride.pickupLocation,
-          dropLocation: ride.dropLocation,
-          scheduledAt: ride.scheduledAt,
-          timeoutAt: new Date(Date.now() + 30000),
-        });
+        const driverDoc = parentRide.driverId;
+        const driverUserId = driverDoc.userId ? driverDoc.userId.toString() : null;
+        if (driverUserId) {
+          io.to(`driver_${driverUserId}`).emit("combined-ride-offer", {
+            primaryRideId: parentRide._id,
+            secondaryRideId: ride._id,
+            pickupLocation: ride.pickupLocation,
+            dropLocation: ride.dropLocation,
+            scheduledAt: ride.scheduledAt,
+            timeoutAt: new Date(Date.now() + 30000),
+          });
+        }
       }
     } else if (ride.paymentStatus !== "PAID") {
       ride.paymentStatus = "PAID";
