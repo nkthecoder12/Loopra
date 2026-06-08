@@ -1,8 +1,14 @@
 const errorHandler = (err, req, res, next) => {
+  if (err.message && err.message.startsWith("CORS blocked")) {
+    return res.status(403).json({ success: false, message: err.message });
+  }
+  if (err.message && err.message.startsWith("Socket CORS blocked")) {
+    return res.status(403).json({ success: false, message: err.message });
+  }
+
   let error = { ...err };
   error.message = err.message;
 
-  // Log error for debugging
   console.error('ERROR:', err);
 
   // Mongoose validation error

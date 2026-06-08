@@ -7,7 +7,11 @@ const connectDB=async()=>{
     mongoose.connection.on('error',(err)=>{
         console.log("MongoDB connection error",err);
     })
-    await mongoose.connect(process.env.MONGODB_URL || "mongodb://localhost:27017/drivo");
+    const mongoUri = process.env.MONGODB_URL;
+    if (!mongoUri) {
+      throw new Error("MONGODB_URL environment variable is required");
+    }
+    await mongoose.connect(mongoUri);
     console.log("MongoDB connected");
 }
 

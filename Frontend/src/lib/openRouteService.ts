@@ -1,4 +1,4 @@
-const ORS_API_KEY = process.env.NEXT_PUBLIC_OPENROUTESERVICE_API_KEY || "";
+import { ORS_API_KEY } from "@/lib/config";
 
 export interface GeocodeResult {
   label: string;

@@ -12,12 +12,15 @@ const signToken = (user) => {
   return jwt.sign({ id: user._id, role }, jwtSecret, { expiresIn: "7d" });
 };
 
+const isProduction = process.env.NODE_ENV === "production";
+
 const setCookie = (res, token) => {
   res.cookie("token", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    maxAge: 7 * 24 * 60 * 60 * 1000
+    secure: isProduction,
+    // Cross-origin frontend (Vercel) + API (Render) requires SameSite=None when using cookies
+    sameSite: isProduction ? "none" : "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 };
 
@@ -92,7 +95,11 @@ const login = async (req, res) => {
 
 const logout = async (req, res) => {
   try {
-    res.clearCookie("token", { httpOnly: true, secure: false, sameSite: "strict" });
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+    });
     return res.status(200).json({ success: true, message: "Logged out successfully" });
   } catch (error) {
     return res.status(500).json({ success: false, message: "Error logging out" });

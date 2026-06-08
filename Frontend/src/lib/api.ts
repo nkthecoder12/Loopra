@@ -1,13 +1,16 @@
 import axios from 'axios';
-import { useAuthStore } from '@/store/useAuthStore';
 import { handleAutoLogout } from '@/utils/jwt';
 import { useNotificationStore } from '@/store/useNotificationStore';
+import { API_BASE_URL } from '@/lib/config';
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  // Auth uses Bearer token in localStorage (cross-origin safe on Vercel + Render)
+  withCredentials: false,
+  timeout: 30000,
 });
 
 api.interceptors.request.use(
@@ -32,8 +35,7 @@ api.interceptors.response.use(
     } else if (status === 403) {
       window.location.href = '/dashboard';
     }
-    
-    // Global error toast
+
     if (!status || status >= 400) {
       useNotificationStore.getState().addNotification('error', message);
     }

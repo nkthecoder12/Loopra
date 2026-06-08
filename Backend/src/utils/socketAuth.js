@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const { jwtSecret } = require("../config/env");
 
 // Socket authentication middleware
 const socketAuth = async (socket, next) => {
@@ -11,7 +12,7 @@ const socketAuth = async (socket, next) => {
     }
 
     // Verify JWT token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "fallback_secret");
+    const decoded = jwt.verify(token, jwtSecret);
     
     // Attach user info to socket
     socket.user = {

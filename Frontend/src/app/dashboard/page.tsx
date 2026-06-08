@@ -11,6 +11,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { useNotificationStore } from '@/store/useNotificationStore';
 import { socketService } from '@/lib/socket';
 import { useAuthStore } from '@/store/useAuthStore';
+import { RAZORPAY_KEY_ID } from '@/lib/config';
 
 type DashboardStep = 'input' | 'selection' | 'tracking' | 'payment' | 'rating';
 
@@ -208,7 +209,7 @@ export default function DashboardPage() {
       
       // 2. Open Razorpay UI
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || orderData.key,
+        key: RAZORPAY_KEY_ID || orderData.key,
         amount: orderData.amount,
         currency: orderData.currency,
         name: 'Drivo',
@@ -279,7 +280,7 @@ export default function DashboardPage() {
       const orderData = await rideService.createAdvancePaymentOrder(currentRideId);
       
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || orderData.key,
+        key: RAZORPAY_KEY_ID || orderData.key,
         amount: orderData.amount,
         currency: orderData.currency,
         name: 'Drivo',

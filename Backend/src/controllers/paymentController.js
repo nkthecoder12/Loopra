@@ -270,8 +270,8 @@ const razorpayWebhook = async (req, res) => {
     return res.status(400).send("Invalid webhook signature");
   }
 
-  // FIXED: parse the raw buffer to string first
-  const event = JSON.parse(req.body.toString());
+  const rawBody = Buffer.isBuffer(req.body) ? req.body.toString() : JSON.stringify(req.body);
+  const event = JSON.parse(rawBody);
 
   if (event.event === "payment.captured") {
     const paymentEntity = event.payload.payment.entity;

@@ -85,10 +85,26 @@ export default function DriverDashboard() {
       // Driver room setup
       socket.emit("driver-go-online");
 
-      socket.off('combined-ride-offer');
-      socket.on('combined-ride-offer', (offer: RideOffer) => {
-        setActiveOffer(offer);
+      const mapInstantOffer = (offer: any): RideOffer => ({
+        id: String(offer.rideId || offer.id),
+        pickup: { address: offer.pickupLocation?.address || offer.pickup?.address || 'Pickup' },
+        drop: { address: offer.dropLocation?.address || offer.drop?.address || 'Drop' },
+        fare: offer.fare ?? 0,
+        type: offer.type || 'instant',
+        eta: offer.eta || `${offer.etaMin ?? 5} min`,
+        secondaryRideId: offer.secondaryRideId,
+      });
+
+      socket.off('new-ride-offer');
+      socket.on('new-ride-offer', (offer: any) => {
+        setActiveOffer(mapInstantOffer(offer));
         addNotification('success', 'New ride offer received!');
+      });
+
+      socket.off('combined-ride-offer');
+      socket.on('combined-ride-offer', (offer: any) => {
+        setActiveOffer(mapInstantOffer({ ...offer, id: offer.primaryRideId || offer.rideId }));
+        addNotification('success', 'New combined ride offer received!');
       });
 
       // Listen to cancellation updates
@@ -104,6 +120,7 @@ export default function DriverDashboard() {
 
     return () => {
       if (socket) {
+        socket.off('new-ride-offer');
         socket.off('combined-ride-offer');
         socket.off('ride-cancelled');
       }

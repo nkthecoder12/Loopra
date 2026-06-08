@@ -1,11 +1,10 @@
 const express = require("express");
 const router = express.Router();
-const { 
-  createPaymentOrder, 
+const {
+  createPaymentOrder,
   verifyPayment,
   createAdvancePaymentOrder,
   verifyAdvancePayment,
-  razorpayWebhook
 } = require("../controllers/paymentController");
 const authMiddleware = require("../middlewares/authMiddleware");
 const roleMiddleware = require("../middlewares/roleMiddleware");
@@ -22,7 +21,6 @@ router.post("/advance/:rideId/order", authMiddleware, roleMiddleware("USER"), cr
 // Verify advance payment
 router.post("/advance/verify", authMiddleware, roleMiddleware("USER"), verifyAdvancePayment);
 
-// Razorpay Webhook (Requires raw body for signature verification)
-router.post("/webhook", express.raw({ type: "application/json" }), razorpayWebhook);
+// Webhook is mounted in server.js before express.json() for raw body signature verification
 
 module.exports = router;

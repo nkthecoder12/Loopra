@@ -29,7 +29,21 @@ const getRide = async (req, res, next) => {
 const createRide = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const rideData = req.body;
+    const pickupLocation = req.body.pickupLocation || req.body.pickup;
+    const dropLocation = req.body.dropLocation || req.body.drop;
+
+    if (!pickupLocation?.lat || !pickupLocation?.lng || !dropLocation?.lat || !dropLocation?.lng) {
+      return res.status(400).json({
+        success: false,
+        message: "pickupLocation and dropLocation with lat/lng are required",
+      });
+    }
+
+    const rideData = {
+      pickupLocation,
+      dropLocation,
+      vehicleType: req.body.vehicleType,
+    };
     const io = req.app.get("io");
 
     const ride = await rideService.createRide(userId, rideData, io);

@@ -5,7 +5,7 @@
 const http = require("http");
 const { io } = require("socket.io-client");
 
-const BASE = "http://localhost:5000";
+const BASE = (process.env.API_BASE_URL || "https://loopra.onrender.com").replace(/\/$/, "");
 const API = `${BASE}/api`;
 const ts = Date.now();
 const PASSENGER = { name: "Audit Passenger", email: `passenger_${ts}@audit.test`, password: "AuditPass123!" };
@@ -174,7 +174,7 @@ async function run() {
   r = await request("POST", "/rides/estimate", { pickup, drop }, passengerToken);
   log("Ride", "Estimate", r.status === 200 && r.data.fare ? "PASS" : "FAIL", `${r.status} fare=${r.data.fare}`);
 
-  r = await request("POST", "/rides/book", { pickup, drop, vehicleType: "economy" }, passengerToken);
+  r = await request("POST", "/rides/book", { pickupLocation: pickup, dropLocation: drop, vehicleType: "economy" }, passengerToken);
   rideId = r.data.rideId;
   otpFromRide = r.data.otp;
   log("Ride", "Book", r.status === 201 && rideId ? "PASS" : "FAIL", `${r.status} rideId=${rideId} otp=${otpFromRide ? "yes" : "no"}`);
@@ -199,7 +199,7 @@ async function run() {
   log("Payment", "Verify payment", "SKIP", "Requires real Razorpay test payment");
 
   // RATING
-  r = await request("POST", "/ratings", { rideId, rating: 5, comment: "Great ride", ratedBy: "USER" }, passengerToken);
+  r = await request("POST", `/ratings/${rideId}`, { rating: 5, comment: "Great ride" }, passengerToken);
   log("Rating", "Submit rating", r.status === 201 || r.status === 200 ? "PASS" : "FAIL", `${r.status} ${r.data.message || ""}`);
 
   // TRACKING
@@ -208,7 +208,7 @@ async function run() {
 
   // ADVANCE RIDE — book second ride
   let rideB;
-  r = await request("POST", "/rides/book", { pickup: drop, drop: pickup, vehicleType: "economy" }, passengerToken);
+  r = await request("POST", "/rides/book", { pickupLocation: drop, dropLocation: pickup, vehicleType: "economy" }, passengerToken);
   if (r.status === 201) {
     rideB = r.data.rideId;
     r = await request("POST", "/advance-rides/book", { parentRideId: rideId, pickup: drop, drop: pickup }, passengerToken);
@@ -218,7 +218,7 @@ async function run() {
   }
 
   // Driver reject test on fresh ride
-  r = await request("POST", "/rides/book", { pickup, drop: { lat: 12.95, lng: 77.60, address: "Test" }, vehicleType: "economy" }, passengerToken);
+  r = await request("POST", "/rides/book", { pickupLocation: pickup, dropLocation: { lat: 12.95, lng: 77.60, address: "Test" }, vehicleType: "economy" }, passengerToken);
   if (r.status === 201) {
     const rejectRideId = r.data.rideId;
     const rej = await request("POST", `/rides/${rejectRideId}/reject`, {}, driverToken);
