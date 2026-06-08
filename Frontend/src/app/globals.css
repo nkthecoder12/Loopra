@@ -1,0 +1,54 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+@theme {
+  --color-primary: #170C79;
+  --color-secondary: #F5F5DC;
+  --color-accent: #5BA7B1;
+  --color-surface: #F0F4F4;
+  
+  --radius-uber: 12px;
+  --radius-uber-lg: 16px;
+  
+  --shadow-uber: 0 4px 20px rgba(23, 12, 121, 0.08);
+  --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+}
+
+:root {
+  --background: #F0F4F4;
+  --foreground: #170C79;
+}
+
+@layer base {
+  body {
+    @apply antialiased text-primary bg-surface;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-glass;
+  }
+  
+  .uber-card {
+    @apply bg-white rounded-uber-lg shadow-uber border border-gray-100/50 p-6 transition-all duration-300 hover:shadow-lg;
+  }
+  
+  .btn-primary {
+    @apply bg-primary text-white px-6 py-3 rounded-uber font-semibold transition-all hover:bg-primary/90 active:scale-95 disabled:opacity-50;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary text-primary px-6 py-3 rounded-uber font-semibold transition-all hover:bg-secondary/80 active:scale-95;
+  }
+}
+
+.page-transition {
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
