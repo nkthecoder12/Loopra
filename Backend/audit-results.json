@@ -1,0 +1,188 @@
+[
+  {
+    "category": "Backend",
+    "name": "Health check",
+    "status": "PASS",
+    "detail": "status=200"
+  },
+  {
+    "category": "Auth",
+    "name": "Passenger signup",
+    "status": "PASS",
+    "detail": "201 Account created. OTP sent to your email."
+  },
+  {
+    "category": "Auth",
+    "name": "Driver user signup",
+    "status": "PASS",
+    "detail": "201"
+  },
+  {
+    "category": "Auth",
+    "name": "Admin signup (as USER)",
+    "status": "PASS",
+    "detail": "201"
+  },
+  {
+    "category": "Auth",
+    "name": "Seed roles (ADMIN/DRIVER/verified)",
+    "status": "PASS",
+    "detail": "via direct DB update for audit"
+  },
+  {
+    "category": "Auth",
+    "name": "Passenger login",
+    "status": "PASS",
+    "detail": "200"
+  },
+  {
+    "category": "Auth",
+    "name": "Driver login",
+    "status": "PASS",
+    "detail": "200"
+  },
+  {
+    "category": "Auth",
+    "name": "Admin login",
+    "status": "PASS",
+    "detail": "200"
+  },
+  {
+    "category": "Auth",
+    "name": "GET /auth/me",
+    "status": "PASS",
+    "detail": "200"
+  },
+  {
+    "category": "Auth",
+    "name": "Send OTP",
+    "status": "PASS",
+    "detail": "200 OTP sent successfully"
+  },
+  {
+    "category": "Auth",
+    "name": "Verify OTP",
+    "status": "PASS",
+    "detail": "200 Verification successful"
+  },
+  {
+    "category": "Driver",
+    "name": "Apply/Onboard",
+    "status": "PASS",
+    "detail": "201 driverId=6a328322d9f36732353ecd7f"
+  },
+  {
+    "category": "Driver",
+    "name": "Get status (pending)",
+    "status": "PASS",
+    "detail": "200 status=PENDING"
+  },
+  {
+    "category": "Driver",
+    "name": "Admin approve",
+    "status": "PASS",
+    "detail": "200"
+  },
+  {
+    "category": "Driver",
+    "name": "Go online",
+    "status": "PASS",
+    "detail": "200"
+  },
+  {
+    "category": "Driver",
+    "name": "Seed location (Bangalore)",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "category": "Ride",
+    "name": "Estimate",
+    "status": "PASS",
+    "detail": "200 fare=124"
+  },
+  {
+    "category": "Ride",
+    "name": "Book",
+    "status": "PASS",
+    "detail": "201 rideId=6a328322d9f36732353ecd8a otp=yes"
+  },
+  {
+    "category": "Ride",
+    "name": "Get active ride",
+    "status": "PASS",
+    "detail": "200"
+  },
+  {
+    "category": "Ride",
+    "name": "Driver accept",
+    "status": "PASS",
+    "detail": "200 Ride accepted"
+  },
+  {
+    "category": "Ride",
+    "name": "Start (OTP verify)",
+    "status": "PASS",
+    "detail": "200 Ride started"
+  },
+  {
+    "category": "Ride",
+    "name": "Complete",
+    "status": "PASS",
+    "detail": "200"
+  },
+  {
+    "category": "Payment",
+    "name": "Create order",
+    "status": "PASS",
+    "detail": "200 "
+  },
+  {
+    "category": "Payment",
+    "name": "Verify payment",
+    "status": "SKIP",
+    "detail": "Requires real Razorpay test payment"
+  },
+  {
+    "category": "Rating",
+    "name": "Submit rating",
+    "status": "PASS",
+    "detail": "201 Rating submitted"
+  },
+  {
+    "category": "Tracking",
+    "name": "History retrieval",
+    "status": "PASS",
+    "detail": "200"
+  },
+  {
+    "category": "Advance",
+    "name": "Book advance ride",
+    "status": "PASS",
+    "detail": "201"
+  },
+  {
+    "category": "Socket",
+    "name": "Reject without token",
+    "status": "PASS",
+    "detail": "Authentication token required"
+  },
+  {
+    "category": "Socket",
+    "name": "Driver go online",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "category": "Socket",
+    "name": "Join ride room",
+    "status": "PASS",
+    "detail": ""
+  },
+  {
+    "category": "Socket",
+    "name": "Ride state snapshot",
+    "status": "PASS",
+    "detail": "COMPLETED"
+  }
+]
