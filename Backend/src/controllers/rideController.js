@@ -50,6 +50,8 @@ const createRide = async (req, res, next) => {
       pickupLocation,
       dropLocation,
       vehicleType: req.body.vehicleType,
+      type: req.body.type || "INSTANT",
+      scheduledAt: req.body.scheduledAt || null
     };
     const io = req.app.get("io");
 

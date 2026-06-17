@@ -12,6 +12,7 @@ import { useNotificationStore } from '@/store/useNotificationStore';
 import { socketService } from '@/lib/socket';
 import { useAuthStore } from '@/store/useAuthStore';
 import { RAZORPAY_KEY_ID } from '@/lib/config';
+import { Calendar } from 'lucide-react';
 
 type DashboardStep = 'input' | 'selection' | 'tracking' | 'payment' | 'rating';
 
@@ -23,6 +24,7 @@ export default function DashboardPage() {
   const [pickupLocation, setPickupLocation] = useState<any>(null);
   const [dropLocation, setDropLocation] = useState<any>(null);
   const [showReturnModal, setShowReturnModal] = useState(false);
+  const [scheduleData, setScheduleData] = useState<{ date: string; time: string } | null>(null);
   
   // Rating form state
   const [rating, setRating] = useState<number>(5);
@@ -45,6 +47,7 @@ export default function DashboardPage() {
     setRating(5);
     setComment('');
     setStep('input');
+    setScheduleData(null);
   };
 
   // Ride Resume & Socket Setup
@@ -150,9 +153,10 @@ export default function DashboardPage() {
     };
   }, [setActiveRide, setLoading, token, updateDriverLocation, updateRideFromSocket, addNotification]);
 
-  const handleSeePrices = async (pickup: any, drop: any) => {
+  const handleSeePrices = async (pickup: any, drop: any, schedule?: { date: string; time: string }) => {
     setPickupLocation(pickup);
     setDropLocation(drop);
+    setScheduleData(schedule || null);
     setLoading(true);
 
     if (abortControllerRef.current) {
@@ -173,15 +177,18 @@ export default function DashboardPage() {
     }
   };
 
-  // Instant booking: Selection moves directly to Ride Creation & Tracking (Post-ride payment)
+  // Selection moves directly to Ride Creation & Tracking
   const handleConfirmRide = async (vehicle: any) => {
     setSelectedVehicle(vehicle);
     setLoading(true);
     try {
+      const scheduledAt = scheduleData ? `${scheduleData.date}T${scheduleData.time}:00` : undefined;
       const newRide = await rideService.createRide({
         pickupLocation,
         dropLocation,
-        vehicleType: vehicle.id
+        vehicleType: vehicle.id,
+        type: scheduleData ? 'SCHEDULED' : 'INSTANT',
+        scheduledAt
       });
       
       const fullRide = await rideService.getRide(newRide.rideId);
@@ -190,7 +197,11 @@ export default function DashboardPage() {
       // Join ride socket room
       socketService.joinRoom(newRide.rideId);
       setStep('tracking');
-      addNotification('success', 'Ride booked successfully! Finding driver...');
+      if (scheduleData) {
+        addNotification('success', 'Advance ride scheduled successfully!');
+      } else {
+        addNotification('success', 'Ride booked successfully! Finding driver...');
+      }
     } catch (error) {
       addNotification('error', 'Failed to book ride. Please try again.');
     } finally {
@@ -352,9 +363,9 @@ export default function DashboardPage() {
   const fareToPay = activeRide?.finalFare || activeRide?.fare || selectedVehicle?.price || 50;
 
   return (
-    <div className="flex-1 flex overflow-hidden">
+    <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
       {/* Column 1 & 2: Dynamic Content */}
-      <div className="flex-1 max-w-[400px] flex flex-col bg-white border-r border-gray-100 z-10 relative">
+      <div className="w-full md:w-[400px] md:max-w-[400px] flex flex-col bg-white border-b md:border-b-0 md:border-r border-gray-100 z-10 relative order-2 md:order-1 h-[55vh] md:h-full overflow-y-auto">
         {step === 'input' && <LocationPanel onSearch={handleSeePrices} />}
         {step === 'selection' && <RideSelectionPanel vehicles={vehicles} onConfirm={handleConfirmRide} />}
         
@@ -447,10 +458,25 @@ export default function DashboardPage() {
             <div className="space-y-4">
               {activeRide.status === 'REQUESTED' && (
                 <>
-                  <div className="h-2 w-full bg-surface rounded-full overflow-hidden">
-                    <div className="h-full bg-primary animate-[shimmer_2s_infinite] w-1/3"></div>
-                  </div>
-                  <h2 className="text-3xl font-black text-primary tracking-tighter italic">Finding your driver...</h2>
+                  {activeRide.type === 'SCHEDULED' ? (
+                    <div className="space-y-4 text-center p-6 bg-yellow-50/50 border border-yellow-100 rounded-3xl">
+                      <Calendar className="mx-auto text-primary w-12 h-12 animate-pulse" />
+                      <h2 className="text-2xl font-black text-primary tracking-tighter italic">Ride Scheduled!</h2>
+                      <p className="text-gray-500 text-sm">
+                        Your ride is confirmed for <strong className="text-primary">{activeRide.scheduledAt ? new Date(activeRide.scheduledAt).toLocaleString() : ''}</strong>.
+                      </p>
+                      <p className="text-gray-400 text-xs">
+                        A driver will be assigned closer to your pickup time.
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="h-2 w-full bg-surface rounded-full overflow-hidden">
+                        <div className="h-full bg-primary animate-[shimmer_2s_infinite] w-1/3"></div>
+                      </div>
+                      <h2 className="text-3xl font-black text-primary tracking-tighter italic">Finding your driver...</h2>
+                    </>
+                  )}
                 </>
               )}
               {['DRIVER_ASSIGNED', 'ONGOING'].includes(activeRide.status) && (
@@ -492,12 +518,12 @@ export default function DashboardPage() {
             </div>
 
             <div className="space-y-3 pt-4">
-              {activeRide.status === 'REQUESTED' && (
+              {(activeRide.status === 'REQUESTED' || activeRide.status === 'DRIVER_ASSIGNED') && (
                 <button onClick={handleCancelRide} className="w-full bg-red-500 text-white py-4 rounded-xl font-bold hover:bg-red-600 transition-colors">
-                  Cancel Request
+                  Cancel Ride
                 </button>
               )}
-              {!activeRide.parentRideId && activeRide.status !== 'COMPLETED' && (
+              {!activeRide.parentRideId && activeRide.status !== 'COMPLETED' && activeRide.status !== 'REQUESTED' && (
                 <button onClick={() => setShowReturnModal(true)} className="w-full bg-surface text-primary py-4 rounded-xl font-black uppercase tracking-widest text-sm hover:bg-gray-100 transition-colors">
                   Book Return Ride (Save 20%)
                 </button>
@@ -517,7 +543,9 @@ export default function DashboardPage() {
       )}
 
       {/* Column 3: Map */}
-      <MapPanel tempPickup={pickupLocation} tempDrop={dropLocation} />
+      <div className="w-full h-[45vh] md:h-full md:flex-1 relative order-1 md:order-2">
+        <MapPanel tempPickup={pickupLocation} tempDrop={dropLocation} />
+      </div>
     </div>
   );
 }

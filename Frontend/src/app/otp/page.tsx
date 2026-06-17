@@ -80,22 +80,22 @@ export default function OTPPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-surface items-center justify-center p-6">
-      <div className="w-full max-w-lg bg-white rounded-uber-lg shadow-uber p-8 sm:p-12 space-y-8 animate-in zoom-in duration-500">
+    <div className="flex min-h-screen bg-surface items-center justify-center p-4">
+      <div className="w-full max-w-lg bg-white rounded-uber-lg shadow-uber p-5 sm:p-12 space-y-8 animate-in zoom-in duration-500">
         <div className="flex flex-col items-center text-center space-y-4">
           <div className="w-20 h-20 bg-primary/5 rounded-full flex items-center justify-center">
             <ShieldCheck className="w-10 h-10 text-primary" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-3xl font-bold text-primary">Verify Identity</h2>
-            <p className="text-gray-500">
+            <h2 className="text-2xl sm:text-3xl font-bold text-primary">Verify Identity</h2>
+            <p className="text-gray-500 text-sm sm:text-base">
               We've sent a 6-digit verification code to <br />
               <span className="font-bold text-black">{email || 'your email'}</span>
             </p>
           </div>
         </div>
 
-        <div className="flex justify-between gap-2 sm:gap-4">
+        <div className="flex justify-between gap-1 sm:gap-4">
           {otp.map((data, index) => (
             <input
               key={index}
@@ -103,7 +103,7 @@ export default function OTPPage() {
               maxLength={1}
               value={data}
               onChange={(e) => handleChange(e.target, index)}
-              className="w-12 h-16 sm:w-16 sm:h-20 text-center text-2xl font-bold border-2 border-gray-100 rounded-uber focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
+              className="w-9 h-12 sm:w-16 sm:h-20 text-center text-lg sm:text-2xl font-bold border-2 border-gray-100 rounded-lg sm:rounded-uber focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
             />
           ))}
         </div>

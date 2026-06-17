@@ -19,6 +19,8 @@ export const rideService = {
     pickupLocation: { lat: number; lng: number; address: string };
     dropLocation: { lat: number; lng: number; address: string };
     vehicleType?: string;
+    type?: string;
+    scheduledAt?: string;
   }) => {
     const { data } = await api.post('/rides/book', rideData);
     return data; // { rideId, status, fare, distanceKm, etaMin, stateVersion }

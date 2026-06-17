@@ -50,10 +50,10 @@ const enforceStatusTransition = (ride, newStatus, requestorRole = null) => {
  * Validates role-based status transitions
  */
 const validateRoleBasedTransition = (currentStatus, newStatus, role) => {
-  // Users can cancel rides only before driver accepts (i.e. status is REQUESTED)
+  // Users can cancel rides before ride starts (i.e. status is REQUESTED or DRIVER_ASSIGNED)
   if (role === "USER" && newStatus === RIDE_STATUS.CANCELLED) {
-    if (currentStatus !== RIDE_STATUS.REQUESTED) {
-      throw new Error("Users can only cancel rides before driver accepts");
+    if (currentStatus !== RIDE_STATUS.REQUESTED && currentStatus !== RIDE_STATUS.DRIVER_ASSIGNED) {
+      throw new Error("Users can only cancel rides before they start");
     }
   }
 

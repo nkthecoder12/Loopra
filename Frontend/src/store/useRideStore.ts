@@ -27,6 +27,7 @@ export interface RideInfo {
   dropLocation?: Location;
   driver?: DriverInfo | null;
   scheduledTime?: string;
+  scheduledAt?: string;
   fare?: number;
   advancePaid?: number;
   type: 'INSTANT' | 'SCHEDULED';

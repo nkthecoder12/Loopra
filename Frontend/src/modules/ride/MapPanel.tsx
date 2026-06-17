@@ -20,7 +20,7 @@ interface MapPanelProps {
 
 export const MapPanel = ({ tempPickup, tempDrop }: MapPanelProps) => {
   return (
-    <div className="w-[50%] relative overflow-hidden group border-l border-gray-100">
+    <div className="w-full h-full relative overflow-hidden group">
       <div className="h-full w-full">
         <MapPanelInner tempPickup={tempPickup} tempDrop={tempDrop} />
       </div>

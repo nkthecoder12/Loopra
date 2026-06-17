@@ -6,12 +6,14 @@ import { Button } from '@/components/ui/Button';
 import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
 import { Location } from '@/store/useRideStore';
 
-export const LocationPanel = ({ onSearch }: { onSearch: (pickup: Location, drop: Location) => void }) => {
+export const LocationPanel = ({ onSearch }: { onSearch: (pickup: Location, drop: Location, scheduleData?: { date: string; time: string }) => void }) => {
   const [pickupText, setPickupText] = useState('');
   const [dropText, setDropText] = useState('');
   const [pickupLocation, setPickupLocation] = useState<Location | null>(null);
   const [dropLocation, setDropLocation] = useState<Location | null>(null);
   const [isScheduled, setIsScheduled] = useState(false);
+  const [scheduledDate, setScheduledDate] = useState('');
+  const [scheduledTime, setScheduledTime] = useState('');
 
   // Geolocation fallback
   useEffect(() => {
@@ -81,15 +83,29 @@ export const LocationPanel = ({ onSearch }: { onSearch: (pickup: Location, drop:
 
         {isScheduled && (
           <div className="grid grid-cols-2 gap-3 animate-in slide-in-from-top-2 duration-300">
-            <input type="date" className="bg-surface p-3 rounded-xl border-none outline-none text-sm font-bold text-primary" />
-            <input type="time" className="bg-surface p-3 rounded-xl border-none outline-none text-sm font-bold text-primary" />
+            <input 
+              type="date" 
+              value={scheduledDate}
+              onChange={(e) => setScheduledDate(e.target.value)}
+              className="bg-surface p-3 rounded-xl border-none outline-none text-sm font-bold text-primary" 
+            />
+            <input 
+              type="time" 
+              value={scheduledTime}
+              onChange={(e) => setScheduledTime(e.target.value)}
+              className="bg-surface p-3 rounded-xl border-none outline-none text-sm font-bold text-primary" 
+            />
           </div>
         )}
 
         <Button 
           onClick={() => {
             if (pickupLocation && dropLocation) {
-              onSearch(pickupLocation, dropLocation);
+              onSearch(
+                pickupLocation, 
+                dropLocation, 
+                isScheduled && scheduledDate && scheduledTime ? { date: scheduledDate, time: scheduledTime } : undefined
+              );
             }
           }}
           disabled={!pickupLocation || !dropLocation}

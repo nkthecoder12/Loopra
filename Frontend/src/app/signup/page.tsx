@@ -91,11 +91,11 @@ export default function SignupPage() {
       </div>
 
       {/* Right Side - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12 md:p-16 bg-white overflow-y-auto">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-5 sm:p-12 md:p-16 bg-white overflow-y-auto">
         <div className="w-full max-w-md space-y-8 animate-in fade-in slide-in-from-right-4 duration-700 py-12">
           <div className="space-y-2 text-center lg:text-left">
-            <h2 className="text-4xl font-bold text-primary">Create Account</h2>
-            <p className="text-gray-500">Start your journey with Drivo in less than a minute.</p>
+            <h2 className="text-3xl sm:text-4xl font-bold text-primary">Create Account</h2>
+            <p className="text-gray-500 text-sm sm:text-base">Start your journey with Drivo in less than a minute.</p>
           </div>
 
           <form className="space-y-4" onSubmit={handleSubmit}>

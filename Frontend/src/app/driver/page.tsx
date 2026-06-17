@@ -299,22 +299,38 @@ export default function DriverDashboard() {
   };
 
   return (
-    <div className="flex h-screen bg-surface">
-      {/* Driver Sidebar */}
-      <nav className="w-24 bg-black flex flex-col items-center py-10 justify-between">
-        <div className="space-y-10 flex flex-col items-center">
-          <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-primary/20">D.</div>
-          <button className="p-3 bg-white/10 rounded-2xl text-white"><Navigation size={24} /></button>
-          <button className="p-3 text-white/40 hover:text-white transition-all"><Bell size={24} /></button>
-          <button className="p-3 text-white/40 hover:text-white transition-all"><User size={24} /></button>
+    <div className="flex flex-col md:flex-row h-screen bg-surface overflow-hidden">
+      {/* Driver Sidebar (Desktop) / Bottom Nav (Mobile) */}
+      <nav className="w-full h-16 md:w-24 md:h-full bg-black flex flex-row md:flex-col items-center py-2 px-6 md:py-10 justify-between order-3 md:order-1 z-30">
+        <div className="flex flex-row md:flex-col items-center gap-6 md:space-y-10 md:gap-0">
+          <div className="w-10 h-10 md:w-12 md:h-12 bg-primary rounded-2xl flex items-center justify-center text-white font-black text-xl md:text-2xl shadow-lg shadow-primary/20">D.</div>
+          <button className="p-2 md:p-3 bg-white/10 rounded-2xl text-white"><Navigation size={20} className="md:w-6 md:h-6" /></button>
+          <button className="p-2 md:p-3 text-white/40 hover:text-white transition-all"><Bell size={20} className="md:w-6 md:h-6" /></button>
         </div>
-        <div className="w-12 h-12 bg-zinc-800 rounded-full border-2 border-zinc-700 overflow-hidden flex items-center justify-center font-bold text-white uppercase">
+        <div className="w-10 h-10 md:w-12 md:h-12 bg-zinc-800 rounded-full border-2 border-zinc-700 overflow-hidden flex items-center justify-center font-bold text-white uppercase text-sm md:text-base">
           {user?.name?.[0] || 'D'}
         </div>
       </nav>
 
       {/* Driver Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-center p-12 relative overflow-hidden">
+      <main className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 relative overflow-hidden order-1 md:order-2 h-[calc(100vh-4rem)] md:h-full overflow-y-auto">
+        {/* Mobile Stats Bar */}
+        <div className="flex md:hidden w-full bg-white border border-gray-100 p-4 rounded-3xl justify-between items-center mb-6 shadow-sm">
+          <div className="text-center">
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Earnings</p>
+            <p className="text-lg font-black text-primary">₹{earnings.total || 0}</p>
+          </div>
+          <div className="h-8 w-px bg-gray-100"></div>
+          <div className="text-center">
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Rating</p>
+            <p className="text-lg font-black text-primary">★ {earnings.rating || 5.0}</p>
+          </div>
+          <div className="h-8 w-px bg-gray-100"></div>
+          <div className="text-center">
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Trips</p>
+            <p className="text-lg font-black text-primary">{earnings.rides || 0}</p>
+          </div>
+        </div>
         {/* Top bar with online toggle */}
         <div className="absolute top-8 right-8 z-20">
           <button 
@@ -529,7 +545,7 @@ export default function DriverDashboard() {
       </main>
 
       {/* Driver Stats Side Panel */}
-      <aside className="w-80 bg-white border-l border-gray-100 p-10 space-y-12">
+      <aside className="hidden md:block w-80 bg-white border-l border-gray-100 p-10 space-y-12 order-2 md:order-3">
         <div className="space-y-2">
           <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Earnings Today</p>
           <h2 className="text-4xl font-black text-primary">₹{earnings.total || 0}</h2>

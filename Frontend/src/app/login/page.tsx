@@ -94,11 +94,11 @@ export default function LoginPage() {
       </div>
 
       {/* Right Side - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12 md:p-24 bg-white">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-5 sm:p-12 md:p-24 bg-white">
         <div className="w-full max-w-md space-y-10 animate-in fade-in slide-in-from-right-4 duration-700">
           <div className="space-y-2">
-            <h2 className="text-4xl font-bold text-primary">Welcome Back</h2>
-            <p className="text-gray-500">Sign in to your Drivo account to book your next ride.</p>
+            <h2 className="text-3xl sm:text-4xl font-bold text-primary">Welcome Back</h2>
+            <p className="text-gray-500 text-sm sm:text-base">Sign in to your Drivo account to book your next ride.</p>
           </div>
 
           <form className="space-y-6" onSubmit={handleSubmit}>

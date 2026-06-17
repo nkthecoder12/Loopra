@@ -9,7 +9,7 @@ const { estimateFare } = require("./fareCalculator");
  * Issue #8: Use real Haversine fare calculation
  */
 const createRide = async (userId, data, io) => {
-  const { pickupLocation, dropLocation } = data;
+  const { pickupLocation, dropLocation, type, scheduledAt } = data;
 
   // 1. Calculate fare from real coordinates
   const { fare, distanceKm, etaMin } = estimateFare({
@@ -20,63 +20,119 @@ const createRide = async (userId, data, io) => {
   });
 
   const session = await mongoose.startSession();
-  session.startTransaction();
+  const useTransaction = ["ReplicaSetWithPrimary", "ReplicaSetNoPrimary", "Sharded"].includes(
+    mongoose.connection?.client?.topology?.description?.type
+  );
+  if (useTransaction) {
+    session.startTransaction();
+  }
 
   try {
     // 2. Prevent double booking — atomic check inside transaction
-    const activeRide = await Ride.findOne({
-      userId,
-      status: { $in: ["REQUESTED", "DRIVER_ASSIGNED", "ONGOING"] },
-    }).session(session);
+    const activeRide = useTransaction
+      ? await Ride.findOne({
+          userId,
+          status: { $in: ["REQUESTED", "DRIVER_ASSIGNED", "ONGOING"] },
+        }).session(session)
+      : await Ride.findOne({
+          userId,
+          status: { $in: ["REQUESTED", "DRIVER_ASSIGNED", "ONGOING"] },
+        });
 
     if (activeRide) {
-      await session.abortTransaction();
+      if (useTransaction) {
+        await session.abortTransaction();
+      }
       session.endSession();
       throw new Error("User already has an active ride");
     }
 
-    // 3. Try to find and lock a nearby driver atomically
-    const driver = await Driver.findOneAndUpdate(
-      {
-        isAvailable: true,
-        isActive: true,
-        onboardingStatus: "APPROVED",
-        location: {
-          $near: {
-            $geometry: {
-              type: "Point",
-              coordinates: [pickupLocation.lng, pickupLocation.lat],
+    // 3. Try to find and lock a nearby driver atomically (Only for non-scheduled rides)
+    let driver = null;
+    if (type !== "SCHEDULED") {
+      driver = useTransaction
+        ? await Driver.findOneAndUpdate(
+            {
+              isAvailable: true,
+              isActive: true,
+              onboardingStatus: "APPROVED",
+              location: {
+                $near: {
+                  $geometry: {
+                    type: "Point",
+                    coordinates: [pickupLocation.lng, pickupLocation.lat],
+                  },
+                  $maxDistance: 10000, // 10 km
+                },
+              },
             },
-            $maxDistance: 10000, // 10 km
-          },
-        },
-      },
-      { $set: { isAvailable: false } },
-      { new: true, session }
-    );
+            { $set: { isAvailable: false } },
+            { new: true, session }
+          )
+        : await Driver.findOneAndUpdate(
+            {
+              isAvailable: true,
+              isActive: true,
+              onboardingStatus: "APPROVED",
+              location: {
+                $near: {
+                  $geometry: {
+                    type: "Point",
+                    coordinates: [pickupLocation.lng, pickupLocation.lat],
+                  },
+                  $maxDistance: 10000, // 10 km
+                },
+              },
+            },
+            { $set: { isAvailable: false } },
+            { new: true }
+          );
+    }
 
     const otp = driver ? Math.floor(1000 + Math.random() * 9000).toString() : null;
     const initialStatus = driver ? "DRIVER_ASSIGNED" : "REQUESTED";
 
     // 4. Create ride
-    const rideArr = await Ride.create(
-      [
-        {
-          userId,
-          driverId: driver ? driver._id : null,
-          pickupLocation,
-          dropLocation,
-          fare,
-          distanceKm,
-          etaMin,
-          status: initialStatus,
-          otp,
-        },
-      ],
-      { session }
-    );
+    const rideArr = useTransaction
+      ? await Ride.create(
+          [
+            {
+              userId,
+              driverId: driver ? driver._id : null,
+              pickupLocation,
+              dropLocation,
+              fare,
+              distanceKm,
+              etaMin,
+              status: initialStatus,
+              otp,
+              type: type || "INSTANT",
+              scheduledAt: type === "SCHEDULED" && scheduledAt ? new Date(scheduledAt) : new Date(),
+            },
+          ],
+          { session }
+        )
+      : await Ride.create(
+          [
+            {
+              userId,
+              driverId: driver ? driver._id : null,
+              pickupLocation,
+              dropLocation,
+              fare,
+              distanceKm,
+              etaMin,
+              status: initialStatus,
+              otp,
+              type: type || "INSTANT",
+              scheduledAt: type === "SCHEDULED" && scheduledAt ? new Date(scheduledAt) : new Date(),
+            },
+          ]
+        );
 
-    await session.commitTransaction();
+    if (useTransaction) {
+      await session.commitTransaction();
+    }
     session.endSession();
 
     const newRide = rideArr[0];
@@ -123,7 +179,9 @@ const createRide = async (userId, data, io) => {
     return newRide;
   } catch (error) {
     try {
-      await session.abortTransaction();
+      if (useTransaction) {
+        await session.abortTransaction();
+      }
       session.endSession();
     } catch (_) {}
     throw error;

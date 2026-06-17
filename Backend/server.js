@@ -9,6 +9,7 @@ const connectDB = require("./src/config/db");
 const errorHandler = require("./src/middlewares/errorHandler");
 const { apiLimiter } = require("./src/middlewares/rateLimiter");
 const startAdvanceRidePoller = require("./src/jobs/advanceRidePoller");
+const startRideTimeoutPoller = require("./src/jobs/rideTimeoutPoller");
 const { corsOptions, socketCorsOptions, getAllowedOrigins } = require("./src/config/cors");
 const { razorpayWebhook } = require("./src/controllers/paymentController");
 
@@ -62,6 +63,7 @@ app.get("/api/health", (req, res) =>
 
 require("./src/sockets/rideSocket")(io);
 startAdvanceRidePoller(io);
+startRideTimeoutPoller(io);
 
 app.use(errorHandler);
 

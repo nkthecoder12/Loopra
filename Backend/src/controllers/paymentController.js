@@ -17,37 +17,57 @@ const createPaymentOrder = async (req, res) => {
   const userId = req.user.id; // ← FIXED: was req.user.userId
 
   const session = await mongoose.startSession();
-  session.startTransaction();
+  const useTransaction = ["ReplicaSetWithPrimary", "ReplicaSetNoPrimary", "Sharded"].includes(
+    mongoose.connection?.client?.topology?.description?.type
+  );
+  if (useTransaction) {
+    session.startTransaction();
+  }
 
   try {
-    const ride = await Ride.findById(rideId).session(session);
+    const ride = useTransaction
+      ? await Ride.findById(rideId).session(session)
+      : await Ride.findById(rideId);
 
     if (!ride) {
-      await session.abortTransaction();
+      if (useTransaction) {
+        await session.abortTransaction();
+      }
       session.endSession();
       return res.status(404).json({ success: false, message: "Ride not found" });
     }
 
     if (ride.userId.toString() !== userId) {
-      await session.abortTransaction();
+      if (useTransaction) {
+        await session.abortTransaction();
+      }
       session.endSession();
       return res.status(403).json({ success: false, message: "Unauthorized" });
     }
 
     if (ride.status !== "COMPLETED") {
-      await session.abortTransaction();
+      if (useTransaction) {
+        await session.abortTransaction();
+      }
       session.endSession();
       return res.status(400).json({ success: false, message: "Ride must be completed before payment" });
     }
 
     // Idempotency: don't create a second order for same ride
-    const existingPayment = await Payment.findOne({
-      rideId: ride._id,
-      status: { $in: ["CREATED", "PAID"] },
-    }).session(session);
+    const existingPayment = useTransaction
+      ? await Payment.findOne({
+          rideId: ride._id,
+          status: { $in: ["CREATED", "PAID"] },
+        }).session(session)
+      : await Payment.findOne({
+          rideId: ride._id,
+          status: { $in: ["CREATED", "PAID"] },
+        });
 
     if (existingPayment) {
-      await session.abortTransaction();
+      if (useTransaction) {
+        await session.abortTransaction();
+      }
       session.endSession();
       return res.status(200).json({
         success: true,
@@ -68,12 +88,20 @@ const createPaymentOrder = async (req, res) => {
       notes: { rideId: ride._id.toString() },
     });
 
-    await Payment.create(
-      [{ rideId: ride._id, userId, amount: fareAmount, razorpayOrderId: order.id, status: "CREATED" }],
-      { session }
-    );
+    if (useTransaction) {
+      await Payment.create(
+        [{ rideId: ride._id, userId, amount: fareAmount, razorpayOrderId: order.id, status: "CREATED" }],
+        { session }
+      );
+    } else {
+      await Payment.create(
+        [{ rideId: ride._id, userId, amount: fareAmount, razorpayOrderId: order.id, status: "CREATED" }]
+      );
+    }
 
-    await session.commitTransaction();
+    if (useTransaction) {
+      await session.commitTransaction();
+    }
     session.endSession();
 
     return res.status(200).json({
@@ -85,7 +113,9 @@ const createPaymentOrder = async (req, res) => {
     });
   } catch (error) {
     console.error("[createPaymentOrder ERROR]:", error);
-    await session.abortTransaction();
+    if (useTransaction) {
+      await session.abortTransaction();
+    }
     session.endSession();
     return res.status(500).json({ success: false, message: "Failed to create payment order", error: error.message });
   }
@@ -117,34 +147,57 @@ const verifyPayment = async (req, res) => {
   }
 
   const session = await mongoose.startSession();
-  session.startTransaction();
+  const useTransaction = ["ReplicaSetWithPrimary", "ReplicaSetNoPrimary", "Sharded"].includes(
+    mongoose.connection?.client?.topology?.description?.type
+  );
+  if (useTransaction) {
+    session.startTransaction();
+  }
 
   try {
-    const payment = await Payment.findOneAndUpdate(
-      { razorpayOrderId: razorpay_order_id, status: "CREATED" },
-      { status: "PAID", razorpayPaymentId: razorpay_payment_id, razorpaySignature: razorpay_signature, paidAt: new Date() },
-      { new: true, session }
-    );
+    const payment = useTransaction
+      ? await Payment.findOneAndUpdate(
+          { razorpayOrderId: razorpay_order_id, status: "CREATED" },
+          { status: "PAID", razorpayPaymentId: razorpay_payment_id, razorpaySignature: razorpay_signature, paidAt: new Date() },
+          { new: true, session }
+        )
+      : await Payment.findOneAndUpdate(
+          { razorpayOrderId: razorpay_order_id, status: "CREATED" },
+          { status: "PAID", razorpayPaymentId: razorpay_payment_id, razorpaySignature: razorpay_signature, paidAt: new Date() },
+          { new: true }
+        );
 
     if (!payment) {
-      await session.abortTransaction();
+      if (useTransaction) {
+        await session.abortTransaction();
+      }
       session.endSession();
       return res.status(400).json({ success: false, message: "Payment already processed or not found" });
     }
 
-    const ride = await Ride.findOneAndUpdate(
-      { _id: payment.rideId, paymentStatus: { $in: [undefined, "PENDING"] } },
-      { paymentStatus: "PAID", paidAt: new Date() },
-      { new: true, session }
-    );
+    const ride = useTransaction
+      ? await Ride.findOneAndUpdate(
+          { _id: payment.rideId, paymentStatus: { $in: [undefined, "PENDING"] } },
+          { paymentStatus: "PAID", paidAt: new Date() },
+          { new: true, session }
+        )
+      : await Ride.findOneAndUpdate(
+          { _id: payment.rideId, paymentStatus: { $in: [undefined, "PENDING"] } },
+          { paymentStatus: "PAID", paidAt: new Date() },
+          { new: true }
+        );
 
     if (!ride) {
-      await session.abortTransaction();
+      if (useTransaction) {
+        await session.abortTransaction();
+      }
       session.endSession();
       return res.status(400).json({ success: false, message: "Ride payment already processed" });
     }
 
-    await session.commitTransaction();
+    if (useTransaction) {
+      await session.commitTransaction();
+    }
     session.endSession();
 
     // Notify via socket
@@ -158,7 +211,9 @@ const verifyPayment = async (req, res) => {
 
     return res.status(200).json({ success: true, message: "Payment verified", amount: payment.amount });
   } catch (error) {
-    await session.abortTransaction();
+    if (useTransaction) {
+      await session.abortTransaction();
+    }
     session.endSession();
     return res.status(500).json({ success: false, message: "Payment verification failed", error: error.message });
   }
@@ -207,23 +262,41 @@ const verifyAdvancePayment = async (req, res) => {
   if (!isValid) return res.status(400).json({ success: false, message: "Invalid payment signature" });
 
   const session = await mongoose.startSession();
-  session.startTransaction();
+  const useTransaction = ["ReplicaSetWithPrimary", "ReplicaSetNoPrimary", "Sharded"].includes(
+    mongoose.connection?.client?.topology?.description?.type
+  );
+  if (useTransaction) {
+    session.startTransaction();
+  }
 
   try {
-    const ride = await Ride.findOneAndUpdate(
-      { _id: rideId, paymentStatus: "PENDING", type: "SCHEDULED" },
-      { $set: { paymentStatus: "RESERVED", advancePaymentId: razorpay_payment_id } },
-      { new: true, session }
-    );
+    const ride = useTransaction
+      ? await Ride.findOneAndUpdate(
+          { _id: rideId, paymentStatus: "PENDING", type: "SCHEDULED" },
+          { $set: { paymentStatus: "RESERVED", advancePaymentId: razorpay_payment_id } },
+          { new: true, session }
+        )
+      : await Ride.findOneAndUpdate(
+          { _id: rideId, paymentStatus: "PENDING", type: "SCHEDULED" },
+          { $set: { paymentStatus: "RESERVED", advancePaymentId: razorpay_payment_id } },
+          { new: true }
+        );
 
     if (!ride) {
-      await session.abortTransaction();
+      if (useTransaction) {
+        await session.abortTransaction();
+      }
       session.endSession();
       return res.status(400).json({ success: false, message: "Advance payment already processed or ride not found" });
     }
 
-    const parentRide = await Ride.findById(ride.parentRideId).populate("driverId").session(session);
-    await session.commitTransaction();
+    const parentRide = useTransaction
+      ? await Ride.findById(ride.parentRideId).populate("driverId").session(session)
+      : await Ride.findById(ride.parentRideId).populate("driverId");
+
+    if (useTransaction) {
+      await session.commitTransaction();
+    }
     session.endSession();
 
     const io = req.app.get("io");
@@ -257,7 +330,9 @@ const verifyAdvancePayment = async (req, res) => {
 
     return res.status(200).json({ success: true, message: "Advance payment successful. Offer dispatched." });
   } catch (error) {
-    await session.abortTransaction();
+    if (useTransaction) {
+      await session.abortTransaction();
+    }
     session.endSession();
     return res.status(500).json({ success: false, message: "Payment verification failed", error: error.message });
   }
