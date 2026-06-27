@@ -2,10 +2,11 @@
 @import "mapbox-gl/dist/mapbox-gl.css";
 
 @theme {
-  --color-primary: #112E81;
-  --color-secondary: #4647AE;
-  --color-accent: #4382DF;
-  --color-support: #AACCD6;
+  --color-primary: #000000;
+  --color-primary-brand: #112E81;
+  --color-secondary: #1F2937;
+  --color-accent: #2563EB;
+  --color-support: #CBD5E1;
   --color-background: #F8FAFC;
   --color-surface: #FFFFFF;
   --color-text-primary: #0F172A;
@@ -13,16 +14,24 @@
   --color-border: #E2E8F0;
   
   --radius-premium: 16px;
-  --radius-premium-lg: 20px;
+  --radius-premium-lg: 24px;
   
-  --shadow-premium: 0 18px 50px rgba(15, 23, 42, 0.10);
-  --shadow-soft: 0 8px 24px rgba(15, 23, 42, 0.08);
-  --shadow-glass: 0 20px 60px rgba(17, 46, 129, 0.14);
+  --shadow-premium: 0 20px 40px -15px rgba(15, 23, 42, 0.12);
+  --shadow-soft: 0 8px 30px rgba(15, 23, 42, 0.06);
+  --shadow-glass: 0 20px 50px rgba(0, 0, 0, 0.15);
 }
 
 :root {
   --background: #F8FAFC;
   --foreground: #0F172A;
+}
+
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 @layer base {
@@ -32,72 +41,85 @@
 
   body {
     @apply antialiased text-text-primary bg-background;
-    font-family: var(--font-inter), system-ui, sans-serif;
+    font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
   }
 
-  h1,
-  h2,
-  h3,
-  h4 {
+  h1, h2, h3, h4 {
     font-family: var(--font-manrope), var(--font-inter), system-ui, sans-serif;
-    letter-spacing: 0;
+    letter-spacing: -0.02em;
   }
 }
 
 @layer components {
   .glass {
-    @apply bg-white/82 backdrop-blur-xl border border-white/70 shadow-glass;
+    @apply bg-white/85 backdrop-blur-xl border border-white/60 shadow-glass;
   }
   
+  .glass-dark {
+    @apply bg-slate-900/90 backdrop-blur-xl border border-white/10 text-white shadow-glass;
+  }
+
   .premium-card {
-    @apply bg-surface rounded-premium-lg shadow-soft border border-border/70 p-6 transition-all duration-[220ms];
+    @apply bg-surface rounded-2xl sm:rounded-premium-lg shadow-soft border border-border/80 p-5 sm:p-6 transition-all duration-200;
   }
-  
-  .btn-primary {
-    @apply bg-primary text-white px-6 py-3 rounded-premium font-semibold transition-all duration-[220ms] hover:bg-secondary active:scale-[0.98] disabled:opacity-50;
+
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
   }
-  
-  .btn-secondary {
-    @apply bg-background text-primary px-6 py-3 rounded-premium font-semibold transition-all duration-[220ms] hover:bg-support/25 active:scale-[0.98];
+
+  .bottom-sheet {
+    @apply fixed inset-x-0 bottom-0 z-40 bg-surface rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.12)] border-t border-border/60 transition-transform duration-300 ease-out;
   }
+}
+
+/* Custom Smooth Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.2);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.4);
 }
 
 .page-transition {
-  animation: fadeIn 0.5s ease-out;
+  animation: fadeIn 0.3s ease-out;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 .user-pulse {
   position: relative;
-  width: 14px;
-  height: 14px;
-  background-color: #4382DF;
-  border: 2px solid white;
+  width: 16px;
+  height: 16px;
+  background-color: #2563EB;
+  border: 3px solid white;
   border-radius: 50%;
-  box-shadow: 0 0 8px rgba(67, 130, 223, 0.5);
+  box-shadow: 0 0 10px rgba(37, 99, 235, 0.6);
 }
 .user-pulse::after {
   content: "";
   position: absolute;
-  top: -2px;
-  left: -2px;
-  width: 14px;
-  height: 14px;
+  top: -3px;
+  left: -3px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  border: 2px solid #4382DF;
+  border: 2px solid #2563EB;
   animation: pulse-blue 2s infinite;
 }
 @keyframes pulse-blue {
-  0% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(3.5);
-    opacity: 0;
-  }
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(3.5); opacity: 0; }
 }
+

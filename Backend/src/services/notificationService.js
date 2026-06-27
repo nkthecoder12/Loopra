@@ -46,11 +46,11 @@ class NotificationService {
    * Ride Booked Notification
    */
   static async notifyRideBooked(userEmail, ride) {
-    const subject = "Drivo — Ride Booked Successfully!";
+    const subject = "Loopra — Ride Booked Successfully!";
     const text = `Your ride is requested! Ride ID: ${ride._id}. Pickup Location: ${ride.pickupLocation.address || "Selected Location"}. Est Fare: ₹${ride.fare}.`;
     const html = `
       <div style="font-family: Arial, sans-serif; padding: 20px; color: #1e1e24; border: 1px solid #eee; border-radius: 8px;">
-        <h2 style="color: #000; font-weight: 800; font-size: 24px; margin-bottom: 20px; text-transform: uppercase; font-style: italic;">Drivo Ride Requested</h2>
+        <h2 style="color: #000; font-weight: 800; font-size: 24px; margin-bottom: 20px; text-transform: uppercase; font-style: italic;">Loopra Ride Requested</h2>
         <p>Your booking request has been registered and we are currently matching you with nearby premium partners.</p>
         <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
         <p><strong>Ride Reference:</strong> ${ride._id}</p>
@@ -65,7 +65,7 @@ class NotificationService {
    * Ride Accepted Notification
    */
   static async notifyRideAccepted(userEmail, ride, driver) {
-    const subject = "Drivo — Driver Match Confirmed!";
+    const subject = "Loopra — Driver Match Confirmed!";
     const text = `Driver ${driver.name} has accepted your ride offer! Vehicle details: ${driver.vehicle.type} (${driver.vehicle.number}). Phone: ${driver.phone}.`;
     const html = `
       <div style="font-family: Arial, sans-serif; padding: 20px; color: #1e1e24; border: 1px solid #eee; border-radius: 8px;">
@@ -84,7 +84,7 @@ class NotificationService {
    * Ride Cancelled Notification
    */
   static async notifyRideCancelled(userEmail, rideId, reason = "User Request") {
-    const subject = "Drivo — Ride Cancellation Alert";
+    const subject = "Loopra — Ride Cancellation Alert";
     const text = `Your ride request (${rideId}) has been cancelled. Reason: ${reason}.`;
     const html = `
       <div style="font-family: Arial, sans-serif; padding: 20px; color: #1e1e24; border: 1px solid #eee; border-radius: 8px;">
@@ -100,11 +100,11 @@ class NotificationService {
    * Ride Completed Notification
    */
   static async notifyRideCompleted(userEmail, ride) {
-    const subject = "Drivo — Ride Completed! Thank you.";
+    const subject = "Loopra — Ride Completed! Thank you.";
     const text = `Your trip is completed. Total fare paid: ₹${ride.fare}. We hope you enjoyed your ride.`;
     const html = `
       <div style="font-family: Arial, sans-serif; padding: 20px; color: #1e1e24; border: 1px solid #eee; border-radius: 8px;">
-        <h2 style="color: #000; font-weight: 800; font-size: 24px; margin-bottom: 20px; text-transform: uppercase; font-style: italic;">Thank you for riding with Drivo!</h2>
+        <h2 style="color: #000; font-weight: 800; font-size: 24px; margin-bottom: 20px; text-transform: uppercase; font-style: italic;">Thank you for riding with Loopra!</h2>
         <p>Your premium ride has safely reached its destination.</p>
         <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
         <p><strong>Total Fare Deducted:</strong> ₹${ride.fare}</p>
@@ -119,9 +119,9 @@ class NotificationService {
    */
   static async notifyDriverOnboarding(driverEmail, status, reason = "") {
     const isApprove = status === "APPROVED";
-    const subject = isApprove ? "Drivo — Onboarding Confirmed!" : "Drivo — Document Update Required";
+    const subject = isApprove ? "Loopra — Onboarding Confirmed!" : "Loopra — Document Update Required";
     const text = isApprove
-      ? "Welcome to Drivo! Your driver account has been approved. You are now authorized to accept rides."
+      ? "Welcome to Loopra! Your driver account has been approved. You are now authorized to accept rides."
       : `Your driver application has been rejected. Reason: ${reason || "Invalid documentation"}. Please re-submit your files.`;
     const html = `
       <div style="font-family: Arial, sans-serif; padding: 20px; color: #1e1e24; border: 1px solid #eee; border-radius: 8px;">

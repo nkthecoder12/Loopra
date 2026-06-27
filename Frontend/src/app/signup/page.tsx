@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -37,15 +38,22 @@ export default function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (formData.password !== formData.confirmPassword) {
       addNotification('error', 'Passwords do not match');
       return;
     }
+
     setLoading(true);
     try {
-      await authService.signup(formData);
+      const response = await authService.signup({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password
+      });
+
       sessionStorage.setItem('signup_email', formData.email);
-      addNotification('success', 'OTP sent to your email');
+      addNotification('success', response.message || 'Registration successful! Verification code sent.');
       router.push('/otp');
     } catch (error: unknown) {
       const errObj = error as { response?: { data?: { message?: string } } };
@@ -58,32 +66,37 @@ export default function SignupPage() {
   return (
     <div className="flex min-h-screen bg-surface">
       {/* Left Side - Visual */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-primary overflow-hidden items-center justify-center">
-        <div className="absolute inset-0 bg-gradient-to-tr from-primary via-primary to-accent opacity-80 z-10"></div>
-        <div className="relative z-20 p-12 text-white space-y-6">
-          <h1 className="text-6xl font-extrabold tracking-tighter">
-            Join Drivo.
-          </h1>
-          <p className="text-xl text-surface/80 max-w-md">
-            Unlock the power of scheduled returns and premium mobility. Join over 1 million happy riders today.
+      <div className="hidden lg:flex lg:w-1/2 relative bg-black overflow-hidden items-center justify-center">
+        <div className="absolute inset-0 bg-gradient-to-tr from-black via-zinc-900 to-primary-brand/40 opacity-90 z-10"></div>
+        <div className="relative z-20 p-12 text-white space-y-8 max-w-xl">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 bg-white rounded-2xl p-2 flex items-center justify-center shadow-2xl">
+              <Image src="/loopra logo.png" alt="Loopra Logo" width={64} height={64} className="object-contain" priority />
+            </div>
+            <h1 className="text-5xl font-black tracking-tighter text-white">
+              Loopra
+            </h1>
+          </div>
+          <p className="text-xl text-zinc-300 font-medium leading-relaxed">
+            Unlock the power of scheduled return rides and instant mobility. Join over 1 million happy riders today.
           </p>
-          <div className="pt-12 space-y-6">
-            <div className="flex items-center gap-4 bg-white/10 p-4 rounded-xl backdrop-blur-sm border border-white/10">
-              <div className="w-10 h-10 bg-accent rounded-full flex items-center justify-center">
+          <div className="pt-6 space-y-4">
+            <div className="flex items-center gap-4 bg-white/10 p-4 rounded-2xl backdrop-blur-md border border-white/10">
+              <div className="w-11 h-11 bg-accent rounded-xl flex items-center justify-center shrink-0">
                 <Lock className="w-5 h-5 text-white" />
               </div>
               <div>
-                <p className="font-bold">Secure Payments</p>
-                <p className="text-sm text-surface/60">Fully encrypted transactions</p>
+                <p className="font-bold text-white">Secure Payments</p>
+                <p className="text-xs text-zinc-400">Fully encrypted instant & scheduled transactions</p>
               </div>
             </div>
-            <div className="flex items-center gap-4 bg-white/10 p-4 rounded-xl backdrop-blur-sm border border-white/10">
-              <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+            <div className="flex items-center gap-4 bg-white/10 p-4 rounded-2xl backdrop-blur-md border border-white/10">
+              <div className="w-11 h-11 bg-blue-600 rounded-xl flex items-center justify-center shrink-0">
                 <User className="w-5 h-5 text-white" />
               </div>
               <div>
-                <p className="font-bold">Priority Matching</p>
-                <p className="text-sm text-surface/60">Get drivers faster than anywhere else</p>
+                <p className="font-bold text-white">Priority Matching</p>
+                <p className="text-xs text-zinc-400">Get top-rated drivers assigned seamlessly</p>
               </div>
             </div>
           </div>
@@ -92,15 +105,23 @@ export default function SignupPage() {
       </div>
 
       {/* Right Side - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-5 sm:p-12 md:p-16 bg-white overflow-y-auto">
-        <div className="w-full max-w-md space-y-8 animate-in fade-in slide-in-from-right-4 duration-700 py-12">
-          <div className="space-y-2 text-center lg:text-left">
-            <h2 className="text-3xl sm:text-4xl font-bold text-primary">Create Account</h2>
-            <p className="text-gray-500 text-sm sm:text-base">Start your journey with Drivo in less than a minute.</p>
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 md:p-16 bg-white overflow-y-auto">
+        <div className="w-full max-w-md space-y-8 py-8">
+          {/* Mobile Header Branding */}
+          <div className="flex lg:hidden items-center gap-3 mb-2">
+            <div className="w-12 h-12 bg-black rounded-xl p-2 flex items-center justify-center shadow-md">
+              <Image src="/loopra logo.png" alt="Loopra Logo" width={48} height={48} className="object-contain" priority />
+            </div>
+            <span className="text-2xl font-black tracking-tighter text-black">Loopra</span>
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-black tracking-tight">Create Account</h2>
+            <p className="text-slate-500 text-sm sm:text-base font-medium">Start your journey with Loopra in less than a minute.</p>
           </div>
 
           <form className="space-y-4" onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 gap-4">
+            <div className="space-y-3">
               <Input 
                 label="Full Name" 
                 type="text" 
@@ -143,27 +164,27 @@ export default function SignupPage() {
               />
             </div>
 
-            <p className="text-xs text-gray-500">
-              By signing up, you agree to Drivo&apos;s{' '}
-              <Link href="/terms" className="text-primary underline">Terms of Service</Link> and{' '}
-              <Link href="/privacy" className="text-primary underline">Privacy Policy</Link>.
+            <p className="text-xs font-medium text-slate-500 pt-1">
+              By signing up, you agree to Loopra&apos;s{' '}
+              <Link href="/terms" className="text-black font-bold underline">Terms of Service</Link> and{' '}
+              <Link href="/privacy" className="text-black font-bold underline">Privacy Policy</Link>.
             </p>
 
-            <Button className="w-full h-14 text-lg" loading={loading}>
+            <Button className="w-full h-14 text-base font-bold bg-black text-white hover:bg-zinc-800 rounded-2xl shadow-lg active:scale-[0.99]" loading={loading}>
               Create Account
             </Button>
           </form>
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-gray-200"></span>
+              <span className="w-full border-t border-slate-200"></span>
             </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or sign up with</span>
+            <div className="relative flex justify-center text-xs font-bold uppercase tracking-wider">
+              <span className="px-3 bg-white text-slate-400">Or sign up with</span>
             </div>
           </div>
 
-          <button className="w-full flex items-center justify-center gap-3 px-6 py-3 border-2 border-gray-100 rounded-uber font-semibold hover:bg-gray-50 transition-all active:scale-95">
+          <button type="button" className="w-full flex items-center justify-center gap-3 px-6 py-3.5 border-2 border-slate-100 rounded-2xl font-bold text-slate-700 hover:bg-slate-50 transition-all active:scale-[0.99] touch-target">
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
               <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-1 .67-2.28 1.07-3.71 1.07-2.85 0-5.27-1.92-6.13-4.51H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -173,9 +194,9 @@ export default function SignupPage() {
             Google
           </button>
 
-          <p className="text-center text-gray-600">
+          <p className="text-center text-sm font-medium text-slate-600">
             Already have an account?{' '}
-            <Link href="/login" className="font-bold text-primary hover:underline">
+            <Link href="/login" className="font-extrabold text-black hover:underline">
               Sign in
             </Link>
           </p>

@@ -245,7 +245,7 @@ export default function DashboardPage() {
         key: RAZORPAY_KEY_ID || orderData.key,
         amount: orderData.amount,
         currency: orderData.currency,
-        name: 'Drivo',
+        name: 'Loopra',
         description: `Ride Payment - ${activeRide.driver?.name || 'Trip'}`,
         order_id: orderData.orderId,
         handler: async (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
@@ -320,7 +320,7 @@ export default function DashboardPage() {
         key: RAZORPAY_KEY_ID || orderData.key,
         amount: orderData.amount,
         currency: orderData.currency,
-        name: 'Drivo',
+        name: 'Loopra',
         description: 'Advance Payment for Return Ride',
         order_id: orderData.orderId,
         handler: async (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
@@ -386,8 +386,11 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-surface">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <div className="flex-1 flex items-center justify-center bg-white">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Loading Loopra...</p>
+        </div>
       </div>
     );
   }
@@ -395,174 +398,201 @@ export default function DashboardPage() {
   const fareToPay = activeRide?.finalFare || activeRide?.fare || selectedVehicle?.price || 50;
 
   return (
-    <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-      {/* Column 1 & 2: Dynamic Content */}
-      <div className="w-full md:w-[400px] md:max-w-[400px] flex flex-col bg-white border-b md:border-b-0 md:border-r border-gray-100 z-10 relative order-2 md:order-1 h-[55vh] md:h-full overflow-y-auto">
-        {step === 'input' && <LocationPanel onSearch={handleSeePrices} />}
-        {step === 'selection' && <RideSelectionPanel vehicles={vehicles} onConfirm={handleConfirmRide} />}
-        
-        {step === 'payment' && (
-          <div className="flex-1 p-8 flex flex-col items-center justify-center text-center space-y-6">
-            <h2 className="text-2xl font-bold text-primary">Trip Completed!</h2>
-            {paymentStatus === 'idle' && (
-              <>
-                <p className="text-gray-500">Confirm payment of ₹{fareToPay} for your completed trip.</p>
-                <div className="w-full space-y-3">
-                  <button onClick={handleProcessPayment} className="w-full bg-primary text-white py-4 rounded-xl font-bold hover:bg-primary/90 transition-all">
-                    Pay Now
-                  </button>
-                </div>
-              </>
-            )}
-            {paymentStatus === 'processing' && (
-              <div className="space-y-4">
-                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-                <p className="text-gray-500 font-bold">Processing payment...</p>
-              </div>
-            )}
-            {paymentStatus === 'success' && (
-              <div className="space-y-4">
-                <div className="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto text-2xl">✓</div>
-                <p className="text-green-500 font-bold">Payment Successful!</p>
-              </div>
-            )}
-            {paymentStatus === 'failed' && (
-              <div className="w-full space-y-4">
-                <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto text-2xl">✕</div>
-                <p className="text-red-500 font-bold">Payment Failed</p>
-                <button onClick={handleProcessPayment} className="w-full bg-primary text-white py-4 rounded-xl font-bold">
-                  Retry Payment
-                </button>
-              </div>
-            )}
+    <div className="relative flex-1 w-full h-full overflow-hidden bg-slate-900">
+      {/* Background Map Viewport */}
+      <div className="absolute inset-0 w-full h-full z-0 pb-16 md:pb-0">
+        <MapPanel tempPickup={pickupLocation} tempDrop={dropLocation} />
+      </div>
+
+      {/* Floating Panel / Drawer Overlay */}
+      <div className="relative z-20 flex flex-col h-full w-full pointer-events-none">
+        {/* Mobile Drag/Indicator Handle Box */}
+        <div className="flex-1 pointer-events-none"></div>
+
+        {/* Interactive Bottom Sheet (Mobile) & Floating Side Drawer (Desktop) */}
+        <div className="pointer-events-auto w-full md:w-[440px] md:max-w-[440px] bg-white rounded-t-[32px] md:rounded-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.15)] md:shadow-2xl border-t md:border border-slate-100 md:m-6 flex flex-col max-h-[75vh] md:max-h-[calc(100vh-48px)] transition-all duration-300 overflow-hidden pb-16 md:pb-0">
+          
+          {/* Mobile Sheet Pull Bar */}
+          <div className="w-full flex items-center justify-center pt-3 pb-1 md:hidden">
+            <div className="w-12 h-1.5 bg-slate-200 rounded-full"></div>
           </div>
-        )}
 
-        {step === 'rating' && (
-          <form onSubmit={handleSubmitRating} className="flex-1 p-8 flex flex-col justify-center space-y-6">
-            <div className="text-center space-y-2">
-              <h2 className="text-3xl font-extrabold text-primary">Trip Feedback</h2>
-              <p className="text-gray-500">Rate your experience with Drivo</p>
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-bold uppercase tracking-wider text-gray-500">Rating</label>
-              <div className="flex gap-2 justify-center">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    onClick={() => setRating(star)}
-                    className={`w-12 h-12 text-2xl rounded-xl transition-all ${
-                      rating >= star ? 'bg-primary text-white scale-110 shadow-md' : 'bg-gray-100 text-gray-400'
-                    }`}
-                  >
-                    ★
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-bold uppercase tracking-wider text-gray-500">Review</label>
-              <textarea
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="Share your experience..."
-                rows={4}
-                className="w-full p-4 border border-gray-200 rounded-2xl outline-none focus:border-primary transition-colors text-sm resize-none"
-              />
-            </div>
-
-            <div className="space-y-3 pt-4">
-              <button type="submit" className="w-full bg-primary text-white py-4 rounded-xl font-bold shadow-lg hover:bg-primary/95 transition-all">
-                Submit Review
-              </button>
-              <button type="button" onClick={resetDashboard} className="w-full text-gray-400 font-bold py-2">
-                Skip
-              </button>
-            </div>
-          </form>
-        )}
-
-        {step === 'tracking' && activeRide && (
-          <div className="flex-1 p-8 flex flex-col space-y-6 overflow-y-auto">
-            <div className="space-y-4">
-              {activeRide.status === 'REQUESTED' && (
-                <>
-                  {activeRide.type === 'SCHEDULED' ? (
-                    <div className="space-y-4 text-center p-6 bg-yellow-50/50 border border-yellow-100 rounded-3xl">
-                      <Calendar className="mx-auto text-primary w-12 h-12 animate-pulse" />
-                      <h2 className="text-2xl font-black text-primary tracking-tighter italic">Ride Scheduled!</h2>
-                      <p className="text-gray-500 text-sm">
-                        Your ride is confirmed for <strong className="text-primary">{activeRide.scheduledAt ? new Date(activeRide.scheduledAt).toLocaleString() : ''}</strong>.
-                      </p>
-                      <p className="text-gray-400 text-xs">
-                        A driver will be assigned closer to your pickup time.
-                      </p>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="h-2 w-full bg-surface rounded-full overflow-hidden">
-                        <div className="h-full bg-primary animate-[shimmer_2s_infinite] w-1/3"></div>
-                      </div>
-                      <h2 className="text-3xl font-black text-primary tracking-tighter italic">Finding your driver...</h2>
-                    </>
-                  )}
-                </>
-              )}
-              {['DRIVER_ASSIGNED', 'ONGOING'].includes(activeRide.status) && (
-                <h2 className="text-3xl font-black text-primary tracking-tighter italic">
-                  {activeRide.status === 'DRIVER_ASSIGNED' ? 'Driver is on the way' : 'Trip in progress'}
-                </h2>
-              )}
-            </div>
-
-            {/* OTP verification display */}
-            {activeRide.status === 'DRIVER_ASSIGNED' && activeRide.otp && (
-              <div className="bg-gradient-to-br from-yellow-50 to-amber-100 border border-yellow-200 p-6 rounded-[24px] text-center shadow-sm">
-                <p className="text-yellow-800 text-xs font-bold uppercase tracking-widest">Share this OTP with Driver to Start Ride</p>
-                <h4 className="text-4xl font-black text-yellow-950 tracking-widest mt-2">{activeRide.otp}</h4>
-              </div>
-            )}
-
-            <div className="p-8 bg-primary rounded-[32px] text-white shadow-xl relative overflow-hidden">
-              <div className="relative z-10 space-y-6">
-                <div>
-                  <p className="text-surface/60 text-sm font-bold uppercase tracking-widest">Status</p>
-                  <h3 className="text-2xl font-bold">{activeRide.status}</h3>
+          <div className="flex-1 overflow-y-auto flex flex-col">
+            {step === 'input' && <LocationPanel onSearch={handleSeePrices} />}
+            {step === 'selection' && <RideSelectionPanel vehicles={vehicles} onConfirm={handleConfirmRide} />}
+            
+            {step === 'payment' && (
+              <div className="flex-1 p-6 sm:p-8 flex flex-col items-center justify-center text-center space-y-6">
+                <div className="w-16 h-16 bg-black text-white rounded-2xl flex items-center justify-center text-2xl font-black shadow-xl">
+                  ✓
                 </div>
-                {activeRide.driver && (
-                  <div className="flex items-center gap-4 bg-white/10 p-4 rounded-2xl">
-                    <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center font-bold">
-                      {activeRide.driver.name[0]}
+                <div className="space-y-1">
+                  <h2 className="text-2xl font-extrabold text-black">Trip Completed!</h2>
+                  <p className="text-slate-500 text-sm font-medium">Thank you for riding with Loopra.</p>
+                </div>
+
+                {paymentStatus === 'idle' && (
+                  <div className="w-full space-y-4 pt-2">
+                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex justify-between items-center">
+                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Amount</span>
+                      <span className="text-2xl font-black text-black">₹{fareToPay}</span>
                     </div>
-                    <div>
-                      <p className="font-bold">{activeRide.driver.name}</p>
-                      <p className="text-sm text-surface/60">
-                        {activeRide.driver.vehicleDetails || (activeRide.driver.vehicle ? (typeof activeRide.driver.vehicle === 'object' ? `${activeRide.driver.vehicle.type} (${activeRide.driver.vehicle.number})` : activeRide.driver.vehicle) : '')}
-                      </p>
-                      <p className="text-xs text-surface/50 mt-1">{activeRide.driver.phone}</p>
-                    </div>
+                    <button onClick={handleProcessPayment} className="w-full bg-black text-white py-4 rounded-2xl font-bold hover:bg-zinc-800 transition-all shadow-lg active:scale-[0.99] touch-target">
+                      Pay Now (Razorpay)
+                    </button>
+                  </div>
+                )}
+                {paymentStatus === 'processing' && (
+                  <div className="space-y-3 py-4">
+                    <div className="w-10 h-10 border-4 border-black border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    <p className="text-slate-600 font-bold text-sm">Verifying payment status...</p>
+                  </div>
+                )}
+                {paymentStatus === 'success' && (
+                  <div className="space-y-4 py-2">
+                    <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">✓</div>
+                    <p className="text-emerald-600 font-extrabold">Payment Verified!</p>
+                  </div>
+                )}
+                {paymentStatus === 'failed' && (
+                  <div className="w-full space-y-4 py-2">
+                    <div className="w-16 h-16 bg-rose-100 text-rose-500 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">✕</div>
+                    <p className="text-rose-500 font-bold">Payment Transaction Failed</p>
+                    <button onClick={handleProcessPayment} className="w-full bg-black text-white py-4 rounded-2xl font-bold touch-target">
+                      Retry Payment
+                    </button>
                   </div>
                 )}
               </div>
-            </div>
+            )}
 
-            <div className="space-y-3 pt-4">
-              {(activeRide.status === 'REQUESTED' || activeRide.status === 'DRIVER_ASSIGNED') && (
-                <button onClick={handleCancelRide} className="w-full bg-red-500 text-white py-4 rounded-xl font-bold hover:bg-red-600 transition-colors">
-                  Cancel Ride
-                </button>
-              )}
-              {!activeRide.parentRideId && activeRide.status !== 'COMPLETED' && activeRide.status !== 'REQUESTED' && (
-                <button onClick={() => setShowReturnModal(true)} className="w-full bg-surface text-primary py-4 rounded-xl font-black uppercase tracking-widest text-sm hover:bg-gray-100 transition-colors">
-                  Book Return Ride (Save 20%)
-                </button>
-              )}
-            </div>
+            {step === 'rating' && (
+              <form onSubmit={handleSubmitRating} className="flex-1 p-6 sm:p-8 flex flex-col justify-center space-y-6">
+                <div className="text-center space-y-2">
+                  <h2 className="text-3xl font-extrabold text-black">Trip Feedback</h2>
+                  <p className="text-slate-500 text-sm font-medium">Rate your experience with Loopra</p>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex gap-3 justify-center">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setRating(star)}
+                        className={`w-12 h-12 text-2xl rounded-2xl transition-all touch-target flex items-center justify-center ${
+                          rating >= star ? 'bg-black text-white scale-110 shadow-lg' : 'bg-slate-100 text-slate-300'
+                        }`}
+                      >
+                        ★
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">Comments (Optional)</label>
+                  <textarea
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="Tell us how your ride went..."
+                    rows={3}
+                    className="w-full p-4 border border-slate-200 rounded-2xl outline-none focus:border-black transition-colors text-sm resize-none font-medium"
+                  />
+                </div>
+
+                <div className="space-y-3 pt-2">
+                  <button type="submit" className="w-full bg-black text-white py-4 rounded-2xl font-bold shadow-lg hover:bg-zinc-800 transition-all touch-target">
+                    Submit Feedback
+                  </button>
+                  <button type="button" onClick={resetDashboard} className="w-full text-slate-400 font-bold py-2 text-sm hover:text-slate-600">
+                    Skip for now
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {step === 'tracking' && activeRide && (
+              <div className="flex-1 p-6 sm:p-8 flex flex-col space-y-6 overflow-y-auto">
+                <div className="space-y-3">
+                  {activeRide.status === 'REQUESTED' && (
+                    <>
+                      {activeRide.type === 'SCHEDULED' ? (
+                        <div className="space-y-3 text-center p-6 bg-amber-50/80 border border-amber-200/60 rounded-3xl">
+                          <Calendar className="mx-auto text-amber-600 w-10 h-10 animate-pulse" />
+                          <h2 className="text-2xl font-black text-amber-950 tracking-tight">Ride Scheduled!</h2>
+                          <p className="text-slate-600 text-sm font-medium">
+                            Confirmed for <strong className="text-black">{activeRide.scheduledAt ? new Date(activeRide.scheduledAt).toLocaleString() : ''}</strong>.
+                          </p>
+                          <p className="text-slate-400 text-xs font-medium">
+                            A Loopra partner driver will be assigned prior to your pickup.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3 text-center py-4">
+                          <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-black animate-[shimmer_1.8s_infinite] w-1/2"></div>
+                          </div>
+                          <h2 className="text-2xl font-black text-black tracking-tight animate-pulse">Connecting with nearby drivers...</h2>
+                        </div>
+                      )}
+                    </>
+                  )}
+                  {['DRIVER_ASSIGNED', 'ONGOING'].includes(activeRide.status) && (
+                    <div className="space-y-1">
+                      <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase tracking-wider rounded-full">Active Trip</span>
+                      <h2 className="text-2xl sm:text-3xl font-black text-black tracking-tight">
+                        {activeRide.status === 'DRIVER_ASSIGNED' ? 'Driver is en route' : 'Trip in progress'}
+                      </h2>
+                    </div>
+                  )}
+                </div>
+
+                {/* OTP verification display */}
+                {activeRide.status === 'DRIVER_ASSIGNED' && activeRide.otp && (
+                  <div className="bg-gradient-to-br from-amber-50 to-orange-100 border border-amber-200/80 p-5 rounded-2xl text-center shadow-sm">
+                    <p className="text-amber-900 text-xs font-black uppercase tracking-widest">Share OTP with Driver</p>
+                    <h4 className="text-4xl font-black text-black tracking-widest mt-2">{activeRide.otp}</h4>
+                  </div>
+                )}
+
+                <div className="p-6 bg-black rounded-3xl text-white shadow-xl relative overflow-hidden space-y-4">
+                  <div>
+                    <p className="text-zinc-400 text-xs font-black uppercase tracking-widest">Trip Status</p>
+                    <h3 className="text-xl font-extrabold text-white mt-0.5">{activeRide.status}</h3>
+                  </div>
+                  {activeRide.driver && (
+                    <div className="flex items-center gap-4 bg-zinc-900/90 p-4 rounded-2xl border border-zinc-800">
+                      <div className="w-12 h-12 bg-white text-black rounded-full flex items-center justify-center font-black text-xl shrink-0">
+                        {activeRide.driver.name[0]}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-white truncate">{activeRide.driver.name}</p>
+                        <p className="text-xs text-zinc-400 truncate">
+                          {activeRide.driver.vehicleDetails || (activeRide.driver.vehicle ? (typeof activeRide.driver.vehicle === 'object' ? `${activeRide.driver.vehicle.type} (${activeRide.driver.vehicle.number})` : activeRide.driver.vehicle) : '')}
+                        </p>
+                        <p className="text-xs text-zinc-400 mt-0.5 font-mono">{activeRide.driver.phone}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-3 pt-2">
+                  {(activeRide.status === 'REQUESTED' || activeRide.status === 'DRIVER_ASSIGNED') && (
+                    <button onClick={handleCancelRide} className="w-full bg-rose-50 text-rose-600 border border-rose-200/60 py-4 rounded-2xl font-bold hover:bg-rose-100 transition-colors touch-target">
+                      Cancel Ride
+                    </button>
+                  )}
+                  {!activeRide.parentRideId && activeRide.status !== 'COMPLETED' && activeRide.status !== 'REQUESTED' && (
+                    <button onClick={() => setShowReturnModal(true)} className="w-full bg-black text-white py-4 rounded-2xl font-extrabold uppercase tracking-wider text-xs hover:bg-zinc-800 transition-colors shadow-lg touch-target">
+                      Book Return Ride (Save 20%)
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {showReturnModal && activeRide && (
@@ -573,11 +603,7 @@ export default function DashboardPage() {
           onConfirm={handleBookReturnRide}
         />
       )}
-
-      {/* Column 3: Map */}
-      <div className="w-full h-[45vh] md:h-full md:flex-1 relative order-1 md:order-2">
-        <MapPanel tempPickup={pickupLocation} tempDrop={dropLocation} />
-      </div>
     </div>
   );
 }
+

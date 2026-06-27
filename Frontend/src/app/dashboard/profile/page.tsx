@@ -71,11 +71,11 @@ export default function ProfilePage() {
   const initials = getInitials(formData.name, formData.email);
 
   return (
-    <div className="flex-1 p-6 sm:p-10 overflow-y-auto bg-surface space-y-8">
+    <div className="flex-1 p-4 sm:p-8 md:p-10 overflow-y-auto bg-slate-50 space-y-6 pb-20 md:pb-10">
       {/* Top Banner Card */}
-      <div className="max-w-4xl mx-auto bg-gradient-to-r from-primary via-[#4647AE] to-[#4382DF] rounded-[32px] p-8 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row justify-between items-center gap-6">
-        <div className="flex items-center gap-6 z-10">
-          <div className="w-24 h-24 rounded-full bg-white/20 backdrop-blur-md border-4 border-white/30 flex items-center justify-center text-3xl font-black text-white shadow-2xl overflow-hidden shrink-0">
+      <div className="max-w-4xl mx-auto bg-black rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row justify-between items-center gap-6 border border-zinc-800">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4 sm:gap-6 z-10 w-full md:w-auto">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-zinc-800 border-4 border-zinc-700 flex items-center justify-center text-2xl sm:text-3xl font-black text-white shadow-2xl overflow-hidden shrink-0">
             {formData.profileImage && !imageError ? (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img 
@@ -88,16 +88,16 @@ export default function ProfilePage() {
               <span className="tracking-widest">{initials}</span>
             )}
           </div>
-          <div className="space-y-1">
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-extrabold tracking-tight">{formData.name || 'Rider Profile'}</h1>
-              <span className="bg-white/20 text-white text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider flex items-center gap-1">
-                <ShieldCheck size={14} /> Verified Rider
+          <div className="space-y-1 min-w-0 flex-1">
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">{formData.name || 'Rider Profile'}</h1>
+              <span className="bg-zinc-800 text-zinc-300 text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider flex items-center gap-1">
+                <ShieldCheck size={12} className="text-emerald-400" /> Verified Rider
               </span>
             </div>
-            <p className="text-white/80 font-medium text-sm">{formData.email}</p>
-            <p className="text-white/60 text-xs font-medium pt-1 flex items-center gap-2">
-              <Calendar size={13} /> Member since January 2026 • Coimbatore Region
+            <p className="text-zinc-400 font-medium text-xs sm:text-sm truncate">{formData.email}</p>
+            <p className="text-zinc-500 text-[11px] font-medium pt-1 flex items-center justify-center sm:justify-start gap-1.5">
+              <Calendar size={12} /> Member of Loopra Mobility • Coimbatore
             </p>
           </div>
         </div>

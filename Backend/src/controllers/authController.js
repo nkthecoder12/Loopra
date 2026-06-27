@@ -43,7 +43,7 @@ const signup = async (req, res) => {
     // Auto-send OTP after signup
     try {
       const otp = await otpService.generateOTP(email);
-      await sendEmail(email, "Verify your Drivo account", `Your OTP is: ${otp}`);
+      await sendEmail(email, "Verify your Loopra account", `Your OTP is: ${otp}`);
     } catch (otpErr) {
       console.error("Auto OTP request failed during signup:", otpErr.message);
     }
@@ -119,7 +119,7 @@ const sendotp = async (req, res) => {
       return res.status(404).json({ success: false, message: "User not found" });
     }
     const otp = await otpService.generateOTP(email);
-    await sendEmail(email, "Your Drivo OTP", `Your OTP is: ${otp}. Valid for 5 minutes.`);
+    await sendEmail(email, "Your Loopra OTP", `Your OTP is: ${otp}. Valid for 5 minutes.`);
     return res.status(200).json({ success: true, message: "OTP sent successfully" });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });

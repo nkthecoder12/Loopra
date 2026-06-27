@@ -105,29 +105,29 @@ export const LocationPanel = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: -16 }}
-      animate={{ opacity: 1, x: 0 }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.22, ease: "easeOut" }}
-      className="flex h-full w-full max-w-[440px] flex-col bg-surface"
+      className="flex h-full w-full flex-col bg-white"
     >
-      <div className="space-y-7 p-6 sm:p-8">
-        <div className="space-y-3">
-          <div className="flex w-fit items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-bold text-primary">
-            <Sparkles size={14} />
-            Coimbatore Dispatch
+      <div className="space-y-5 p-5 sm:p-7">
+        <div className="space-y-2">
+          <div className="flex w-fit items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-extrabold text-black uppercase tracking-wider">
+            <Sparkles size={13} className="text-blue-600" />
+            Coimbatore Service Area
           </div>
           <div>
-            <h2 className="text-3xl font-extrabold tracking-normal text-text-primary">Where to?</h2>
-            <p className="mt-1 text-sm font-medium text-text-secondary">Book now or schedule a ride within Coimbatore.</p>
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-black">Where to?</h2>
+            <p className="mt-0.5 text-xs sm:text-sm font-medium text-slate-500">Instant or scheduled mobility in Coimbatore.</p>
           </div>
         </div>
 
-        <div className="relative space-y-4">
-          <div className="absolute bottom-[44px] left-[23px] top-[44px] w-0.5 bg-border" />
+        <div className="relative space-y-3 pt-1">
+          <div className="absolute bottom-[40px] left-[21px] top-[40px] w-0.5 bg-slate-300" />
 
-          <div className="relative flex items-center gap-4">
-            <div className="z-10 flex h-4 w-4 items-center justify-center rounded-full border-2 border-primary bg-surface">
-              <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+          <div className="relative flex items-center gap-3">
+            <div className="z-10 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 border-black bg-white">
+              <div className="h-1.5 w-1.5 rounded-full bg-black" />
             </div>
             <div className="flex-1">
               <AutocompleteInput
@@ -139,8 +139,8 @@ export const LocationPanel = ({
             </div>
           </div>
 
-          <div className="relative flex items-center gap-4">
-            <div className="z-10 h-4 w-4 rounded bg-secondary shadow-soft" />
+          <div className="relative flex items-center gap-3">
+            <div className="z-10 h-4 w-4 shrink-0 rounded bg-black shadow-sm" />
             <div className="flex-1">
               <AutocompleteInput
                 placeholder="Where to?"
@@ -152,19 +152,19 @@ export const LocationPanel = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 rounded-premium bg-background p-1">
+        <div className="grid grid-cols-2 gap-2 rounded-2xl bg-slate-100 p-1">
           <button
             onClick={() => setIsScheduled(false)}
-            className={`flex items-center justify-center gap-2 rounded-[14px] py-3 text-sm font-bold transition-all duration-[220ms] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent/20 ${!isScheduled ? "bg-surface text-primary shadow-soft" : "text-text-secondary hover:text-primary"}`}
+            className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-black transition-all touch-target ${!isScheduled ? "bg-black text-white shadow-md" : "text-slate-600 hover:text-black"}`}
           >
-            <Clock size={16} />
-            Now
+            <Clock size={15} />
+            Pickup Now
           </button>
           <button
             onClick={() => setIsScheduled(true)}
-            className={`flex items-center justify-center gap-2 rounded-[14px] py-3 text-sm font-bold transition-all duration-[220ms] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent/20 ${isScheduled ? "bg-surface text-primary shadow-soft" : "text-text-secondary hover:text-primary"}`}
+            className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-black transition-all touch-target ${isScheduled ? "bg-black text-white shadow-md" : "text-slate-600 hover:text-black"}`}
           >
-            <Calendar size={16} />
+            <Calendar size={15} />
             Schedule
           </button>
         </div>
@@ -172,23 +172,23 @@ export const LocationPanel = ({
         <AnimatePresence>
           {isScheduled && (
             <motion.div
-              initial={{ opacity: 0, height: 0, y: -8 }}
-              animate={{ opacity: 1, height: "auto", y: 0 }}
-              exit={{ opacity: 0, height: 0, y: -8 }}
-              transition={{ duration: 0.22, ease: "easeOut" }}
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
               className="grid grid-cols-2 gap-3 overflow-hidden"
             >
               <input
                 type="date"
                 value={scheduledDate}
                 onChange={(e) => setScheduledDate(e.target.value)}
-                className="rounded-premium border border-border bg-background p-3 text-sm font-bold text-primary outline-none transition-all focus:border-accent focus:ring-4 focus:ring-accent/15"
+                className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs font-bold text-black outline-none focus:border-black touch-target"
               />
               <input
                 type="time"
                 value={scheduledTime}
                 onChange={(e) => setScheduledTime(e.target.value)}
-                className="rounded-premium border border-border bg-background p-3 text-sm font-bold text-primary outline-none transition-all focus:border-accent focus:ring-4 focus:ring-accent/15"
+                className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs font-bold text-black outline-none focus:border-black touch-target"
               />
             </motion.div>
           )}
@@ -208,56 +208,55 @@ export const LocationPanel = ({
             );
           }}
           disabled={!pickupLocation || !dropLocation}
-          size="xl"
-          className="group w-full"
+          className="group w-full h-14 bg-black text-white hover:bg-zinc-800 rounded-2xl font-bold text-base shadow-lg touch-target active:scale-[0.99]"
         >
           See Prices
-          <ArrowRight className="ml-2 transition-transform duration-[220ms] group-hover:translate-x-1" />
+          <ArrowRight className="ml-2 w-5 h-5 transition-transform duration-200 group-hover:translate-x-1" />
         </Button>
       </div>
 
-      <div className="flex-1 space-y-5 overflow-y-auto px-6 pb-8 sm:px-8">
+      <div className="flex-1 space-y-4 overflow-y-auto px-5 pb-6 sm:px-7">
         <div className="grid grid-cols-2 gap-3">
           {favorites.map((favorite) => {
             const Icon = favorite.icon;
             return (
               <button
                 key={favorite.label}
-                className="rounded-premium border border-border bg-background p-4 text-left transition-all duration-[220ms] hover:border-accent hover:bg-surface hover:shadow-soft focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent/20"
+                className="rounded-2xl border border-slate-100 bg-slate-50 p-3.5 text-left transition-all hover:border-slate-300 hover:bg-white hover:shadow-md touch-target"
               >
-                <Icon size={18} className="text-primary" />
-                <p className="mt-3 text-sm font-bold text-text-primary">{favorite.label}</p>
-                <p className="mt-1 text-xs font-medium text-text-secondary">{favorite.detail}</p>
+                <Icon size={18} className="text-black" />
+                <p className="mt-2 text-xs font-bold text-black">{favorite.label}</p>
+                <p className="mt-0.5 text-[11px] font-medium text-slate-400 truncate">{favorite.detail}</p>
               </button>
             );
           })}
         </div>
 
-        <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-text-secondary">
-          <History size={14} />
-          Recent Places
+        <h3 className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-widest text-slate-400 pt-1">
+          <History size={13} />
+          Recent Destinations
         </h3>
         {history.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {history.map((loc, idx) => (
               <div
                 key={idx}
                 onClick={() => handleSelectHistory(loc)}
-                className="group flex cursor-pointer items-center gap-3 rounded-premium border border-transparent p-3 transition-all duration-[220ms] hover:border-border hover:bg-background"
+                className="group flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-100 p-3 transition-all hover:bg-slate-50 touch-target"
               >
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-background text-text-secondary transition-colors group-hover:bg-surface group-hover:text-primary">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700 transition-colors group-hover:bg-black group-hover:text-white">
                   <MapPin size={16} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-bold text-text-primary">{loc.address.split(",")[0]}</p>
-                  <p className="truncate text-xs font-medium text-text-secondary">{loc.address.split(",").slice(1).join(",").trim()}</p>
+                  <p className="truncate text-xs font-bold text-black">{loc.address.split(",")[0]}</p>
+                  <p className="truncate text-[11px] font-medium text-slate-400">{loc.address.split(",").slice(1).join(",").trim()}</p>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <p className="rounded-premium border border-dashed border-border bg-background p-4 text-sm font-medium text-text-secondary">
-            No recent places found.
+          <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 text-xs font-medium text-slate-400 text-center">
+            No recent destinations yet.
           </p>
         )}
       </div>
