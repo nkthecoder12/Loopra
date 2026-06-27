@@ -1,37 +1,15 @@
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 
-// Singleton connection-pooled transporter for production cloud environments
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp-relay.brevo.com",
-  port: parseInt(process.env.SMTP_PORT, 10) || 587,
-  secure: process.env.SMTP_SECURE === "true", // true for port 465, false for 587
-  pool: true,
-  maxConnections: 5,
-  maxMessages: 100,
-  connectionTimeout: 10000, // 10s connection timeout
-  socketTimeout: 15000, // 15s socket timeout
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-  tls: {
-    rejectUnauthorized: true,
-  },
-});
-
-// Verify SMTP connection on server startup
-if (process.env.NODE_ENV === "production" || process.env.VERIFY_SMTP === "true") {
-  transporter.verify((error, success) => {
-    if (error) {
-      console.error("[SMTP Startup Error] Verification failed:", error.message);
-    } else {
-      console.log("[SMTP Startup Ready] Email transport ready for dispatch.");
-    }
-  });
+// Initialize Resend SDK instance safely
+const resendApiKey = process.env.RESEND_API_KEY;
+if (!resendApiKey && process.env.NODE_ENV === "production") {
+  console.warn("[Resend Warning] RESEND_API_KEY environment variable is not defined!");
 }
 
+const resend = new Resend(resendApiKey || "re_dummy_key_for_dev");
+
 /**
- * Enterprise Send Email Dispatcher
+ * Enterprise Send Email Dispatcher powered by Resend API
  * @param {string} to Recipient email address
  * @param {string} subject Email subject line
  * @param {string} text Plaintext body
@@ -43,23 +21,31 @@ const sendEmail = async (to, subject, text, html = "") => {
   }
 
   const normalizedTo = to.toLowerCase().trim();
-  const mailOptions = {
-    from: `"${process.env.SENDER_NAME || 'Loopra Mobility'}" <${process.env.SENDER_EMAIL || process.env.SMTP_USER}>`,
-    to: normalizedTo,
-    subject: subject,
-    text: text,
-    html: html || undefined,
-  };
+  const fromAddress = process.env.EMAIL_FROM || "Loopra <noreply@loopra.co.in>";
+
+  console.log(`[Resend Dispatch] Sending email to: ${normalizedTo} | Subject: "${subject}"`);
 
   try {
-    const info = await transporter.sendMail(mailOptions);
-    console.log(`[SendMail Success] MessageID: ${info.messageId} | Recipient: ${normalizedTo} | Accepted: ${info.accepted?.join(", ") || normalizedTo}`);
-    if (info.rejected && info.rejected.length > 0) {
-      console.warn(`[SendMail Warning] Rejected recipients: ${info.rejected.join(", ")}`);
+    const response = await resend.emails.send({
+      from: fromAddress,
+      to: [normalizedTo],
+      subject: subject,
+      text: text,
+      html: html || undefined,
+    });
+
+    if (response.error) {
+      console.error(`[Resend API Error] Failed delivering to ${normalizedTo}:`, response.error.message);
+      throw new Error(`Resend API Error: ${response.error.message}`);
     }
-    return info;
+
+    console.log(`[Resend Dispatch Success] Email ID: ${response.data?.id} | Recipient: ${normalizedTo}`);
+    return response.data;
   } catch (error) {
-    console.error(`[SendMail Failure] Dispatch to ${normalizedTo} failed:`, error.message);
+    console.error(`[Resend Runtime Exception] Failed delivering to ${normalizedTo}:`, error.message);
+    if (error.stack) {
+      console.error(`[Resend Stack Trace]:`, error.stack);
+    }
     throw new Error(`Email delivery failed: ${error.message}`);
   }
 };

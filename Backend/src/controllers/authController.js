@@ -219,4 +219,22 @@ const refreshToken = async (req, res) => {
   }
 };
 
-module.exports = { signup, login, logout, sendotp, verifyOtp, getMe, forgotPassword, refreshToken };
+// ─── TEST EMAIL ENDPOINT ─────────────────────────────────────────────────────
+
+const testEmail = async (req, res) => {
+  const targetEmail = req.query.email || "test@loopra.co.in";
+  try {
+    const data = await sendEmail(targetEmail, "Loopra Resend Diagnostic Test", "If you receive this, Resend HTTPS delivery is 100% operational!");
+    return res.status(200).json({ success: true, message: "Diagnostic email dispatched via Resend API", data });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+      name: error.name,
+      stack: error.stack,
+      cause: error.cause
+    });
+  }
+};
+
+module.exports = { signup, login, logout, sendotp, verifyOtp, getMe, forgotPassword, refreshToken, testEmail };

@@ -22,7 +22,7 @@ class NotificationService {
    */
   static async sendEmail(to, subject, text, html = "") {
     await withRetry(async () => {
-      // Use existing sendMailHelper which wraps Nodemailer
+      // Use existing sendMailHelper which wraps Resend API
       await sendMailHelper(to, subject, html || text);
       console.log(`[NotificationService] Email dispatched successfully to: ${to} (Subject: "${subject}")`);
     });
