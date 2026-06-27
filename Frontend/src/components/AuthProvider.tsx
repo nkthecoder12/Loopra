@@ -61,18 +61,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               // Rejoin the socket room for this ride
               socketService.joinRoom(activeRide._id);
             }
-          } catch (_) {
+          } catch {
             // Not critical — no active ride
           }
         }
-      } catch (err: any) {
+      } catch (error: unknown) {
         // Issue #4: 401 from /auth/me means token expired on server → force logout
-        if (err.response?.status === 401) {
+        const errObj = error as { response?: { status?: number } };
+        if (errObj.response?.status === 401) {
           clearCredentials();
           socketService.disconnect();
         } else {
-          // Network error — still set basic creds from token as fallback
-          setCredentials({ id: decoded.id, role: decoded.role as any, email: '' }, token);
+          const rawRole = decoded.role as string;
+          const userRole: 'USER' | 'DRIVER' | 'ADMIN' = rawRole === 'DRIVER' ? 'DRIVER' : rawRole === 'ADMIN' ? 'ADMIN' : 'USER';
+          setCredentials({ id: decoded.id, role: userRole, email: '' }, token);
         }
       } finally {
         setHydrating(false);

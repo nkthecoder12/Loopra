@@ -31,8 +31,9 @@ export const rideService = {
     try {
       const { data } = await api.get('/rides/active');
       return data.ride ?? null;
-    } catch (error: any) {
-      if (error.response?.status === 404) return null;
+    } catch (error: unknown) {
+      const errObj = error as { response?: { status?: number } };
+      if (errObj.response?.status === 404) return null;
       throw error;
     }
   },
@@ -64,7 +65,7 @@ export const rideService = {
   },
 
   // Issue #14: was /rides/:id/payment/verify → fixed to /payments/verify
-  verifyPayment: async (payload: any) => {
+  verifyPayment: async (payload: Record<string, unknown>) => {
     const { data } = await api.post('/payments/verify', payload);
     return data;
   },
@@ -80,7 +81,7 @@ export const rideService = {
   },
 
   // Advance ride
-  bookAdvanceRide: async (body: { rideAId: string; pickupLocation: any; dropLocation: any; scheduledAt: string }) => {
+  bookAdvanceRide: async (body: { rideAId: string; pickupLocation: Record<string, unknown>; dropLocation: Record<string, unknown>; scheduledAt: string }) => {
     const { data } = await api.post('/advance-rides/book', body);
     return data;
   },
@@ -90,7 +91,7 @@ export const rideService = {
     return data;
   },
 
-  verifyAdvancePayment: async (paymentData: any) => {
+  verifyAdvancePayment: async (paymentData: Record<string, unknown>) => {
     const { data } = await api.post('/payments/advance/verify', paymentData);
     return data;
   },

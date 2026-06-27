@@ -32,7 +32,7 @@ export const authService = {
   logout: async () => {
     try {
       await api.post('/auth/logout');
-    } catch (error) {
+    } catch {
       console.warn('Backend logout failed, proceeding with local logout.');
     }
   },

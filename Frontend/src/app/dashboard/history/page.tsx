@@ -15,7 +15,8 @@ export default function RideHistoryPage() {
       try {
         const data = await rideService.getRideHistory(1, 20);
         setRides(data.rides || []);
-      } catch (err) {
+      } catch (error) {
+        console.error('Failed to load ride history', error);
         addNotification('error', 'Failed to load ride history');
       } finally {
         setLoading(false);
@@ -52,7 +53,7 @@ export default function RideHistoryPage() {
                       {ride.status}
                     </span>
                     <span className="text-sm text-gray-500 font-medium">
-                      {new Date(ride.scheduledTime || Date.now()).toLocaleDateString()}
+                      {ride.scheduledTime ? new Date(ride.scheduledTime).toLocaleDateString() : 'N/A'}
                     </span>
                   </div>
                   <div className="flex items-center gap-4">

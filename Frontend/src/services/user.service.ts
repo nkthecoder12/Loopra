@@ -6,7 +6,7 @@ export const userService = {
     return data;
   },
 
-  updateProfile: async (profileData: any) => {
+  updateProfile: async (profileData: Record<string, unknown>) => {
     const { data } = await api.put('/users/profile', profileData);
     return data;
   }

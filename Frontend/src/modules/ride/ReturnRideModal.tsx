@@ -1,11 +1,11 @@
 "use client";
 
 import React from 'react';
-import { RotateCcw, Clock, ArrowRight, ShieldCheck, CreditCard, X } from 'lucide-react';
+import { RotateCcw, Clock, ShieldCheck, CreditCard, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 interface ReturnRideModalProps {
-  onConfirm: (data: any) => void;
+  onConfirm: () => void;
   onClose: () => void;
   pickup: string;
   drop: string;

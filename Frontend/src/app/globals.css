@@ -1,46 +1,64 @@
 @import "tailwindcss";
-@import "leaflet/dist/leaflet.css";
+@import "mapbox-gl/dist/mapbox-gl.css";
 
 @theme {
-  --color-primary: #170C79;
-  --color-secondary: #F5F5DC;
-  --color-accent: #5BA7B1;
-  --color-surface: #F0F4F4;
+  --color-primary: #112E81;
+  --color-secondary: #4647AE;
+  --color-accent: #4382DF;
+  --color-support: #AACCD6;
+  --color-background: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #64748B;
+  --color-border: #E2E8F0;
   
-  --radius-uber: 12px;
-  --radius-uber-lg: 16px;
+  --radius-premium: 16px;
+  --radius-premium-lg: 20px;
   
-  --shadow-uber: 0 4px 20px rgba(23, 12, 121, 0.08);
-  --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+  --shadow-premium: 0 18px 50px rgba(15, 23, 42, 0.10);
+  --shadow-soft: 0 8px 24px rgba(15, 23, 42, 0.08);
+  --shadow-glass: 0 20px 60px rgba(17, 46, 129, 0.14);
 }
 
 :root {
-  --background: #F0F4F4;
-  --foreground: #170C79;
+  --background: #F8FAFC;
+  --foreground: #0F172A;
 }
 
 @layer base {
+  * {
+    @apply border-border;
+  }
+
   body {
-    @apply antialiased text-primary bg-surface;
-    font-family: 'Inter', system-ui, sans-serif;
+    @apply antialiased text-text-primary bg-background;
+    font-family: var(--font-inter), system-ui, sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-manrope), var(--font-inter), system-ui, sans-serif;
+    letter-spacing: 0;
   }
 }
 
 @layer components {
   .glass {
-    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-glass;
+    @apply bg-white/82 backdrop-blur-xl border border-white/70 shadow-glass;
   }
   
-  .uber-card {
-    @apply bg-white rounded-uber-lg shadow-uber border border-gray-100/50 p-6 transition-all duration-300 hover:shadow-lg;
+  .premium-card {
+    @apply bg-surface rounded-premium-lg shadow-soft border border-border/70 p-6 transition-all duration-[220ms];
   }
   
   .btn-primary {
-    @apply bg-primary text-white px-6 py-3 rounded-uber font-semibold transition-all hover:bg-primary/90 active:scale-95 disabled:opacity-50;
+    @apply bg-primary text-white px-6 py-3 rounded-premium font-semibold transition-all duration-[220ms] hover:bg-secondary active:scale-[0.98] disabled:opacity-50;
   }
   
   .btn-secondary {
-    @apply bg-secondary text-primary px-6 py-3 rounded-uber font-semibold transition-all hover:bg-secondary/80 active:scale-95;
+    @apply bg-background text-primary px-6 py-3 rounded-premium font-semibold transition-all duration-[220ms] hover:bg-support/25 active:scale-[0.98];
   }
 }
 
@@ -51,4 +69,35 @@
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+.user-pulse {
+  position: relative;
+  width: 14px;
+  height: 14px;
+  background-color: #4382DF;
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(67, 130, 223, 0.5);
+}
+.user-pulse::after {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid #4382DF;
+  animation: pulse-blue 2s infinite;
+}
+@keyframes pulse-blue {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(3.5);
+    opacity: 0;
+  }
 }

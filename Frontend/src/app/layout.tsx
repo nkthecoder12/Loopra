@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Manrope } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/AuthProvider";
 import { MapProvider } from "@/components/MapProvider";
 import { NotificationContainer } from "@/components/NotificationContainer";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope" });
 
 export const metadata: Metadata = {
-  title: "Drivo | Premium Ride Booking",
-  description: "Book your ride A and B with Drivo. The most reliable return ride system.",
+  title: "Loopra | Premium Mobility",
+  description: "Book instant and scheduled rides with Loopra's premium mobility platform.",
 };
 
 export default function RootLayout({
@@ -19,7 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} antialiased`}>
+      <body className={`${inter.variable} ${manrope.variable} antialiased`}>
         <AuthProvider>
           <MapProvider>
             {children}

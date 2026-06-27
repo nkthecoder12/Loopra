@@ -22,9 +22,10 @@ export const driverService = {
     try {
       const { data } = await api.get('/driver/status');
       return data;
-    } catch (err: any) {
-      if (err.response?.status === 404) return null;
-      throw err;
+    } catch (error: unknown) {
+      const errObj = error as { response?: { status?: number } };
+      if (errObj.response?.status === 404) return null;
+      throw error;
     }
   },
 

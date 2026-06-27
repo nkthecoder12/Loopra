@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { ShieldCheck, Navigation, Bell, MapPin, RotateCcw, ArrowRight, User, Power, Star } from 'lucide-react';
+import { Navigation, Bell, Power } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/store/useAuthStore';
 import { socketService } from '@/lib/socket';
@@ -20,6 +20,17 @@ interface RideOffer {
   secondaryRideId?: string;
 }
 
+interface DriverRide {
+  _id?: string;
+  id?: string;
+  rideId?: string;
+  status?: string;
+  fare?: number;
+  finalFare?: number;
+  pickupLocation?: { address?: string };
+  dropLocation?: { address?: string };
+}
+
 export default function DriverDashboard() {
   const { token, user } = useAuthStore();
   const { addNotification } = useNotificationStore();
@@ -27,9 +38,8 @@ export default function DriverDashboard() {
   
   const [isOnline, setIsOnline] = useState(false);
   const [activeOffer, setActiveOffer] = useState<RideOffer | null>(null);
-  const [activeRide, setActiveRide] = useState<any | null>(null);
+  const [activeRide, setActiveRide] = useState<DriverRide | null>(null);
   const [earnings, setEarnings] = useState({ total: 0, rides: 0, rating: 5.0, acceptanceRate: 100 });
-  const [location, setLocation] = useState<{lat: number, lng: number} | null>(null);
   
   // Start / Complete Ride inputs
   const [otp, setOtp] = useState('');
@@ -85,31 +95,31 @@ export default function DriverDashboard() {
       // Driver room setup
       socket.emit("driver-go-online");
 
-      const mapInstantOffer = (offer: any): RideOffer => ({
+      const mapInstantOffer = (offer: Record<string, unknown>): RideOffer => ({
         id: String(offer.rideId || offer.id),
-        pickup: { address: offer.pickupLocation?.address || offer.pickup?.address || 'Pickup' },
-        drop: { address: offer.dropLocation?.address || offer.drop?.address || 'Drop' },
-        fare: offer.fare ?? 0,
-        type: offer.type || 'instant',
-        eta: offer.eta || `${offer.etaMin ?? 5} min`,
-        secondaryRideId: offer.secondaryRideId,
+        pickup: { address: (offer.pickupLocation as { address?: string })?.address || (offer.pickup as { address?: string })?.address || 'Pickup' },
+        drop: { address: (offer.dropLocation as { address?: string })?.address || (offer.drop as { address?: string })?.address || 'Drop' },
+        fare: (offer.fare as number) ?? 0,
+        type: (offer.type as string) || 'instant',
+        eta: (offer.eta as string) || `${(offer.etaMin as number) ?? 5} min`,
+        secondaryRideId: offer.secondaryRideId as string | undefined,
       });
 
       socket.off('new-ride-offer');
-      socket.on('new-ride-offer', (offer: any) => {
+      socket.on('new-ride-offer', (offer: Record<string, unknown>) => {
         setActiveOffer(mapInstantOffer(offer));
         addNotification('success', 'New ride offer received!');
       });
 
       socket.off('combined-ride-offer');
-      socket.on('combined-ride-offer', (offer: any) => {
+      socket.on('combined-ride-offer', (offer: Record<string, unknown>) => {
         setActiveOffer(mapInstantOffer({ ...offer, id: offer.primaryRideId || offer.rideId }));
         addNotification('success', 'New combined ride offer received!');
       });
 
       // Listen to cancellation updates
       socket.off('ride-cancelled');
-      socket.on('ride-cancelled', (data: any) => {
+      socket.on('ride-cancelled', (data: { rideId: string }) => {
         if (activeRide && (activeRide._id === data.rideId || activeRide.id === data.rideId)) {
           addNotification('info', 'Ride was cancelled by the passenger.');
           setActiveRide(null);
@@ -133,7 +143,6 @@ export default function DriverDashboard() {
       if ("geolocation" in navigator) {
         watchId.current = navigator.geolocation.watchPosition((position) => {
           const { latitude, longitude } = position.coords;
-          setLocation({ lat: latitude, lng: longitude });
 
           const now = Date.now();
           // Throttle updates to every 5 seconds
@@ -141,7 +150,7 @@ export default function DriverDashboard() {
             const socket = socketService.getSocket();
             if (socket) {
               // Send location format backend expects: { rideId, latitude, longitude }
-              const rideId = activeRide?._id || activeRide?.id || null;
+              const rideId = activeRide?._id || activeRide?.id || activeRide?.rideId || null;
               socket.emit('driver-location', {
                 rideId,
                 latitude,
@@ -158,7 +167,6 @@ export default function DriverDashboard() {
       if (watchId.current !== null) {
         navigator.geolocation.clearWatch(watchId.current);
       }
-      setActiveOffer(null);
     }
 
     return () => {
@@ -173,6 +181,9 @@ export default function DriverDashboard() {
       const newState = !isOnline;
       await driverService.toggleAvailability(newState);
       setIsOnline(newState);
+      if (!newState) {
+        setActiveOffer(null);
+      }
       
       const socket = socketService.getSocket();
       if (socket && newState) {
@@ -180,7 +191,8 @@ export default function DriverDashboard() {
       }
       
       addNotification('success', `You are now ${newState ? 'Online' : 'Offline'}`);
-    } catch (err) {
+    } catch (error) {
+      console.error(error);
       addNotification('error', 'Failed to update availability status');
     }
   };
@@ -188,11 +200,12 @@ export default function DriverDashboard() {
   const handleAcceptBoth = async () => {
     if (!activeOffer) return;
     try {
-      const res = await driverService.respondToAdvanceOffer(activeOffer.id, true, true);
+      await driverService.respondToAdvanceOffer(activeOffer.id, true, true);
       setActiveOffer(null);
       // Scheduled/combined rides assign status
       addNotification('success', 'Both rides accepted successfully!');
-    } catch (err) {
+    } catch (error) {
+      console.error(error);
       addNotification('error', 'Failed to accept combined offer.');
       setActiveOffer(null);
     }
@@ -201,7 +214,7 @@ export default function DriverDashboard() {
   const handleAcceptSingle = async () => {
     if (!activeOffer) return;
     try {
-      let acceptedRide: any;
+      let acceptedRide: DriverRide;
       if (activeOffer.secondaryRideId) {
         acceptedRide = await driverService.respondToAdvanceOffer(activeOffer.id, true, false);
       } else {
@@ -213,11 +226,14 @@ export default function DriverDashboard() {
       setActiveOffer(null);
       
       // Join ride room
-      const rideId = acceptedRide._id || acceptedRide.id;
-      socketService.joinRoom(rideId);
+      const rideId = acceptedRide._id || acceptedRide.id || acceptedRide.rideId;
+      if (rideId) {
+        socketService.joinRoom(rideId);
+      }
       
       addNotification('success', 'Ride accepted successfully!');
-    } catch (err) {
+    } catch (error) {
+      console.error(error);
       addNotification('error', 'Failed to accept ride.');
       setActiveOffer(null);
     }
@@ -228,7 +244,8 @@ export default function DriverDashboard() {
     try {
       await driverService.rejectRide(activeOffer.id);
       setActiveOffer(null);
-    } catch (err) {
+    } catch (error) {
+      console.error(error);
       setActiveOffer(null);
     }
   };
@@ -238,14 +255,16 @@ export default function DriverDashboard() {
     e.preventDefault();
     if (!activeRide) return;
     try {
-      const rideId = activeRide._id || activeRide.id;
+      const rideId = activeRide._id || activeRide.id || activeRide.rideId;
+      if (!rideId) return;
       const res = await driverService.startRide(rideId, otp);
       
       // Update active ride
       setActiveRide(res.data);
       addNotification('success', 'OTP Verified! Ride Started.');
-    } catch (err: any) {
-      const msg = err.response?.data?.message || 'Failed to start ride. Invalid OTP.';
+    } catch (error: unknown) {
+      const errObj = error as { response?: { data?: { message?: string } } };
+      const msg = errObj.response?.data?.message || 'Failed to start ride. Invalid OTP.';
       addNotification('error', msg);
     }
   };
@@ -254,13 +273,15 @@ export default function DriverDashboard() {
   const handleCompleteRide = async () => {
     if (!activeRide) return;
     try {
-      const rideId = activeRide._id || activeRide.id;
+      const rideId = activeRide._id || activeRide.id || activeRide.rideId;
+      if (!rideId) return;
       const res = await driverService.completeRide(rideId);
       setActiveRide(res.ride);
       addNotification('success', 'Ride Completed! Show summary.');
       setShowRatingScreen(true);
-    } catch (err: any) {
-      addNotification('error', err.response?.data?.message || 'Failed to complete ride');
+    } catch (error: unknown) {
+      const errObj = error as { response?: { data?: { message?: string } } };
+      addNotification('error', errObj.response?.data?.message || 'Failed to complete ride');
     }
   };
 
@@ -269,7 +290,8 @@ export default function DriverDashboard() {
     e.preventDefault();
     if (!activeRide) return;
     try {
-      const rideId = activeRide._id || activeRide.id;
+      const rideId = activeRide._id || activeRide.id || activeRide.rideId;
+      if (!rideId) return;
       await rideService.submitDriverRating(rideId, userRating, userComment);
       addNotification('success', 'User rating submitted!');
       
@@ -285,7 +307,8 @@ export default function DriverDashboard() {
       if (data) {
         setEarnings(data);
       }
-    } catch (err) {
+    } catch (error) {
+      console.error(error);
       addNotification('error', 'Failed to submit user rating');
       setActiveRide(null);
       setShowRatingScreen(false);

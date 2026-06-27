@@ -1,15 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Users, 
   Car, 
   RotateCcw, 
   TrendingUp, 
   ArrowUpRight, 
-  Filter, 
-  Download,
-  Search,
   CheckCircle,
   XCircle
 } from 'lucide-react';
@@ -17,18 +14,38 @@ import { Button } from '@/components/ui/Button';
 import { adminService } from '@/services/admin.service';
 import { useNotificationStore } from '@/store/useNotificationStore';
 
+interface AdminUser {
+  _id?: string;
+  id?: string;
+  name?: string;
+  email?: string;
+  role?: string;
+}
+
+interface AdminDriver {
+  _id?: string;
+  id?: string;
+  name?: string;
+  phone?: string;
+  onboardingStatus?: string;
+  userId?: {
+    name?: string;
+    phone?: string;
+  };
+  vehicle?: {
+    type?: string;
+    number?: string;
+  };
+}
+
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('Overview');
-  const [users, setUsers] = useState<any[]>([]);
-  const [drivers, setDrivers] = useState<any[]>([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [drivers, setDrivers] = useState<AdminDriver[]>([]);
   const [loading, setLoading] = useState(true);
   const { addNotification } = useNotificationStore();
 
-  useEffect(() => {
-    fetchData();
-  }, [activeTab]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       if (activeTab === 'Users') {
@@ -44,14 +61,22 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab, addNotification]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchData();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [fetchData]);
 
   const handleApprove = async (id: string) => {
     try {
       await adminService.approveDriver(id);
       addNotification('success', 'Driver approved');
       fetchData();
-    } catch (err) {
+    } catch (error) {
+      console.error('Failed to approve driver', error);
       addNotification('error', 'Failed to approve driver');
     }
   };
@@ -61,7 +86,8 @@ export default function AdminDashboard() {
       await adminService.rejectDriver(id, 'Admin rejected');
       addNotification('success', 'Driver rejected');
       fetchData();
-    } catch (err) {
+    } catch (error) {
+      console.error('Failed to reject driver', error);
       addNotification('error', 'Failed to reject driver');
     }
   };
@@ -183,10 +209,10 @@ export default function AdminDashboard() {
                       <td className="px-8 py-6">
                         {driver.onboardingStatus === 'PENDING' && (
                           <div className="flex gap-2">
-                            <button onClick={() => handleApprove(driver._id || driver.id)} className="p-2 bg-green-50 text-green-600 rounded hover:bg-green-100">
+                            <button onClick={() => handleApprove(driver._id || driver.id || '')} className="p-2 bg-green-50 text-green-600 rounded hover:bg-green-100">
                               <CheckCircle size={18} />
                             </button>
-                            <button onClick={() => handleReject(driver._id || driver.id)} className="p-2 bg-red-50 text-red-600 rounded hover:bg-red-100">
+                            <button onClick={() => handleReject(driver._id || driver.id || '')} className="p-2 bg-red-50 text-red-600 rounded hover:bg-red-100">
                               <XCircle size={18} />
                             </button>
                           </div>

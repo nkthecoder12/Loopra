@@ -1,14 +1,15 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { User, Mail, Phone, Lock } from 'lucide-react';
+import { User, Lock } from 'lucide-react';
 
 import { useNotificationStore } from '@/store/useNotificationStore';
 import { authService } from '@/services/auth.service';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -22,9 +23,8 @@ export default function SignupPage() {
     confirmPassword: ''
   });
 
-  React.useEffect(() => {
-    // We need to import useAuthStore at the top
-    const authStore = require('@/store/useAuthStore').useAuthStore.getState();
+  useEffect(() => {
+    const authStore = useAuthStore.getState();
     if (!authStore.isHydrating && authStore.isAuthenticated) {
       const user = authStore.user;
       if (user) {
@@ -47,8 +47,9 @@ export default function SignupPage() {
       sessionStorage.setItem('signup_email', formData.email);
       addNotification('success', 'OTP sent to your email');
       router.push('/otp');
-    } catch (err: any) {
-      addNotification('error', err.response?.data?.message || 'Failed to create account');
+    } catch (error: unknown) {
+      const errObj = error as { response?: { data?: { message?: string } } };
+      addNotification('error', errObj.response?.data?.message || 'Failed to create account');
     } finally {
       setLoading(false);
     }
@@ -143,7 +144,7 @@ export default function SignupPage() {
             </div>
 
             <p className="text-xs text-gray-500">
-              By signing up, you agree to Drivo's{' '}
+              By signing up, you agree to Drivo&apos;s{' '}
               <Link href="/terms" className="text-primary underline">Terms of Service</Link> and{' '}
               <Link href="/privacy" className="text-primary underline">Privacy Policy</Link>.
             </p>

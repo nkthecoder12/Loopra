@@ -18,8 +18,9 @@ export interface DriverInfo {
 }
 
 export interface RideInfo {
-  id: string;
+  id?: string;
   _id?: string;
+  rideId?: string;
   status: BackendRideStatus;
   pickup?: Location;
   drop?: Location;
@@ -58,13 +59,50 @@ export const useRideStore = create<RideState>((set) => ({
   returnRide: null,
   isRoundTrip: false,
   
-  setActiveRide: (ride) => set({ activeRide: ride }),
-  setReturnRide: (ride) => set({ returnRide: ride }),
+  setActiveRide: (ride) => {
+    if (ride) {
+      if (ride.rideId) {
+        if (!ride._id) ride._id = ride.rideId;
+        if (!ride.id) ride.id = ride.rideId;
+      }
+      if (ride._id && !ride.id) ride.id = ride._id;
+      if (ride.id && !ride._id) ride._id = ride.id;
+    }
+    set({ activeRide: ride });
+  },
+  setReturnRide: (ride) => {
+    if (ride) {
+      if (ride.rideId) {
+        if (!ride._id) ride._id = ride.rideId;
+        if (!ride.id) ride.id = ride.rideId;
+      }
+      if (ride._id && !ride.id) ride.id = ride._id;
+      if (ride.id && !ride._id) ride._id = ride.id;
+    }
+    set({ returnRide: ride });
+  },
   setRoundTrip: (isRoundTrip) => set({ isRoundTrip }),
   
-  updateRideFromSocket: (updates) => set((state) => ({
-    activeRide: state.activeRide ? { ...state.activeRide, ...updates } : null
-  })),
+  updateRideFromSocket: (updates) => set((state) => {
+    const newUpdates = { ...updates };
+    if (newUpdates.rideId) {
+      if (!newUpdates._id) newUpdates._id = newUpdates.rideId;
+      if (!newUpdates.id) newUpdates.id = newUpdates.rideId;
+    }
+    if (newUpdates._id && !newUpdates.id) newUpdates.id = newUpdates._id;
+    if (newUpdates.id && !newUpdates._id) newUpdates._id = newUpdates.id;
+
+    const updatedRide = state.activeRide ? { ...state.activeRide, ...newUpdates } : null;
+    if (updatedRide) {
+      if (updatedRide.rideId) {
+        if (!updatedRide._id) updatedRide._id = updatedRide.rideId;
+        if (!updatedRide.id) updatedRide.id = updatedRide.rideId;
+      }
+      if (updatedRide._id && !updatedRide.id) updatedRide.id = updatedRide._id;
+      if (updatedRide.id && !updatedRide._id) updatedRide._id = updatedRide.id;
+    }
+    return { activeRide: updatedRide };
+  }),
   
   updateDriverLocation: (lat, lng) => set((state) => {
     if (state.activeRide && state.activeRide.driver) {

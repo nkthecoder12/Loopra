@@ -15,22 +15,19 @@ export default function OTPPage() {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [timer, setTimer] = useState(59);
   const [loading, setLoading] = useState(false);
-  const [email, setEmail] = useState('');
+  const [email] = useState(() => typeof window !== 'undefined' ? sessionStorage.getItem('signup_email') || '' : '');
   const { addNotification } = useNotificationStore();
   const { setCredentials } = useAuthStore();
 
   useEffect(() => {
     if (timer > 0) {
-      const interval = setInterval(() => setTimer(timer - 1), 1000);
+      const interval = setInterval(() => setTimer((t) => t - 1), 1000);
       return () => clearInterval(interval);
     }
   }, [timer]);
 
   useEffect(() => {
-    const storedEmail = sessionStorage.getItem('signup_email');
-    if (storedEmail) {
-      setEmail(storedEmail);
-    } else {
+    if (typeof window !== 'undefined' && !sessionStorage.getItem('signup_email')) {
       router.push('/signup');
     }
   }, [router]);
@@ -47,15 +44,18 @@ export default function OTPPage() {
       const { token } = response;
       const decoded = decodeToken(token);
       if (decoded) {
-        setCredentials({ id: decoded.id, role: decoded.role as any, email }, token);
+        const rawRole = decoded.role as string;
+        const userRole: 'USER' | 'DRIVER' | 'ADMIN' = rawRole === 'DRIVER' ? 'DRIVER' : rawRole === 'ADMIN' ? 'ADMIN' : 'USER';
+        setCredentials({ id: decoded.id, role: userRole, email }, token);
         addNotification('success', 'Identity verified successfully!');
         sessionStorage.removeItem('signup_email');
-        if (decoded.role === 'ADMIN') router.push('/admin');
-        else if (decoded.role === 'DRIVER') router.push('/driver');
+        if (userRole === 'ADMIN') router.push('/admin');
+        else if (userRole === 'DRIVER') router.push('/driver');
         else router.push('/dashboard');
       }
-    } catch (err: any) {
-      addNotification('error', err.response?.data?.message || 'Invalid OTP');
+    } catch (error: unknown) {
+      const errObj = error as { response?: { data?: { message?: string } } };
+      addNotification('error', errObj.response?.data?.message || 'Invalid OTP');
     } finally {
       setLoading(false);
     }
@@ -66,7 +66,8 @@ export default function OTPPage() {
       await authService.sendOTP(email);
       setTimer(59);
       addNotification('success', 'New OTP sent to your email');
-    } catch (err: any) {
+    } catch (error) {
+      console.error(error);
       addNotification('error', 'Failed to resend OTP');
     }
   };
@@ -89,7 +90,7 @@ export default function OTPPage() {
           <div className="space-y-2">
             <h2 className="text-2xl sm:text-3xl font-bold text-primary">Verify Identity</h2>
             <p className="text-gray-500 text-sm sm:text-base">
-              We've sent a 6-digit verification code to <br />
+              We&apos;ve sent a 6-digit verification code to <br />
               <span className="font-bold text-black">{email || 'your email'}</span>
             </p>
           </div>
@@ -119,7 +120,7 @@ export default function OTPPage() {
 
           <div className="text-center space-y-4">
             <p className="text-sm text-gray-500">
-              Didn't receive the code?{' '}
+              Didn&apos;t receive the code?{' '}
               {timer > 0 ? (
                 <span className="font-bold text-primary">Resend in {timer}s</span>
               ) : (

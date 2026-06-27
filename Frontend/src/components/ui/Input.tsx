@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
@@ -20,14 +21,13 @@ export const Input: React.FC<InputProps> = ({ label, error, type = 'text', ...pr
         <input
           {...props}
           type={inputType}
-          className={`peer w-full px-4 pt-6 pb-2 border-2 rounded-uber outline-none transition-all
-            ${error ? 'border-red-500' : 'border-gray-200 focus:border-primary'}
-            placeholder-transparent`}
+          className={cn(
+            "peer w-full rounded-premium border bg-surface px-4 pb-2 pt-6 text-sm font-semibold text-text-primary outline-none transition-all duration-[220ms] placeholder-transparent shadow-sm disabled:cursor-not-allowed disabled:bg-background disabled:text-text-secondary",
+            error ? "border-red-500 focus:border-red-500 focus:ring-4 focus:ring-red-500/10" : "border-border focus:border-accent focus:ring-4 focus:ring-accent/15"
+          )}
           placeholder={label}
         />
-        <label className={`absolute left-4 top-1 text-xs font-semibold text-gray-500 transition-all
-          peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:font-normal
-          peer-focus:top-1 peer-focus:text-xs peer-focus:font-semibold peer-focus:text-primary pointer-events-none`}>
+        <label className="pointer-events-none absolute left-4 top-1 text-xs font-bold text-text-secondary transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-sm peer-placeholder-shown:font-semibold peer-focus:top-1 peer-focus:text-xs peer-focus:font-bold peer-focus:text-primary">
           {label}
         </label>
         
@@ -35,7 +35,8 @@ export const Input: React.FC<InputProps> = ({ label, error, type = 'text', ...pr
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-4 top-4 text-gray-400 hover:text-primary transition-colors"
+            className="absolute right-4 top-4 text-text-secondary transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent/20 rounded-full"
+            aria-label={showPassword ? "Hide password" : "Show password"}
           >
             {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
           </button>

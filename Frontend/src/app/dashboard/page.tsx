@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { LocationPanel } from '@/modules/ride/LocationPanel';
-import { RideSelectionPanel } from '@/modules/ride/RideSelectionPanel';
+import { RideSelectionPanel, VehicleOption } from '@/modules/ride/RideSelectionPanel';
 import { MapPanel } from '@/modules/ride/MapPanel';
 import { ReturnRideModal } from '@/modules/ride/ReturnRideModal';
-import { useRideStore } from '@/store/useRideStore';
+import { useRideStore, RideInfo } from '@/store/useRideStore';
 import { rideService } from '@/services/ride.service';
 import { useAppStore } from '@/store/useAppStore';
 import { useNotificationStore } from '@/store/useNotificationStore';
@@ -16,13 +16,29 @@ import { Calendar } from 'lucide-react';
 
 type DashboardStep = 'input' | 'selection' | 'tracking' | 'payment' | 'rating';
 
+interface LocationObj {
+  lat: number;
+  lng: number;
+  address: string;
+}
+
+interface Vehicle {
+  id: string;
+  name: string;
+  price: number | string;
+  eta: number | string;
+  desc?: string;
+  image?: string;
+  capacity?: number;
+}
+
 export default function DashboardPage() {
   const [step, setStep] = useState<DashboardStep>('input');
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'failed'>('idle');
-  const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
-  const [vehicles, setVehicles] = useState<any[]>([]);
-  const [pickupLocation, setPickupLocation] = useState<any>(null);
-  const [dropLocation, setDropLocation] = useState<any>(null);
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [pickupLocation, setPickupLocation] = useState<LocationObj | null>(null);
+  const [dropLocation, setDropLocation] = useState<LocationObj | null>(null);
   const [showReturnModal, setShowReturnModal] = useState(false);
   const [scheduleData, setScheduleData] = useState<{ date: string; time: string } | null>(null);
   
@@ -38,7 +54,7 @@ export default function DashboardPage() {
   const { token } = useAuthStore();
 
   // Reset helper
-  const resetDashboard = () => {
+  const resetDashboard = useCallback(() => {
     setActiveRide(null);
     setPickupLocation(null);
     setDropLocation(null);
@@ -48,15 +64,16 @@ export default function DashboardPage() {
     setComment('');
     setStep('input');
     setScheduleData(null);
-  };
+  }, [setActiveRide]);
 
   // Ride Resume & Socket Setup
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let socketRef: any = null;
-    let onRideUpdate: any;
-    let onDriverLocation: any;
-    let onRideOtp: any;
-    let onRideStateSnapshot: any;
+    let onRideUpdate: (data: Partial<RideInfo>) => void;
+    let onDriverLocation: (data: { latitude?: number; lat?: number; longitude?: number; lng?: number }) => void;
+    let onRideOtp: (data: { otp: string }) => void;
+    let onRideStateSnapshot: (data: RideInfo) => void;
 
     const initApp = async () => {
       try {
@@ -75,26 +92,28 @@ export default function DashboardPage() {
           socketService.connect(token);
           socketRef = socketService.getSocket();
           if (socketRef) {
-            onRideUpdate = (data: any) => {
+            onRideUpdate = (data: Partial<RideInfo>) => {
               updateRideFromSocket(data);
               if (data.status === 'COMPLETED') {
                 setStep('payment');
-              } else if (data.status === 'CANCELLED' || data.status === 'FAILED') {
+              } else if (data.status === 'CANCELLED' || (data.status as string) === 'FAILED') {
                 addNotification('info', `Ride status: ${data.status}`);
                 resetDashboard();
               }
             };
 
-            onDriverLocation = (data: any) => {
+            onDriverLocation = (data) => {
               // Standardized coordinate field names: latitude, longitude
-              updateDriverLocation(data.latitude || data.lat, data.longitude || data.lng);
+              const lat = data.latitude ?? data.lat ?? 0;
+              const lng = data.longitude ?? data.lng ?? 0;
+              updateDriverLocation(lat, lng);
             };
 
-            onRideOtp = (data: any) => {
+            onRideOtp = (data) => {
               updateRideFromSocket({ otp: data.otp });
             };
 
-            onRideStateSnapshot = (data: any) => {
+            onRideStateSnapshot = (data) => {
               setActiveRide(data);
               if (data.status === 'COMPLETED') {
                 setStep('payment');
@@ -151,9 +170,9 @@ export default function DashboardPage() {
         socketRef.off('ride-state-snapshot', onRideStateSnapshot);
       }
     };
-  }, [setActiveRide, setLoading, token, updateDriverLocation, updateRideFromSocket, addNotification]);
+  }, [setActiveRide, setLoading, token, updateDriverLocation, updateRideFromSocket, addNotification, resetDashboard]);
 
-  const handleSeePrices = async (pickup: any, drop: any, schedule?: { date: string; time: string }) => {
+  const handleSeePrices = async (pickup: LocationObj, drop: LocationObj, schedule?: { date: string; time: string }) => {
     setPickupLocation(pickup);
     setDropLocation(drop);
     setScheduleData(schedule || null);
@@ -168,8 +187,9 @@ export default function DashboardPage() {
       const data = await rideService.estimateRide(pickup, drop, abortControllerRef.current.signal);
       setVehicles(data.vehicles || []); 
       setStep('selection');
-    } catch (error: any) {
-      if (error.name !== 'CanceledError') {
+    } catch (error: unknown) {
+      const errObj = error as { name?: string };
+      if (errObj.name !== 'CanceledError') {
         addNotification('error', 'Failed to fetch price estimates');
       }
     } finally {
@@ -178,8 +198,9 @@ export default function DashboardPage() {
   };
 
   // Selection moves directly to Ride Creation & Tracking
-  const handleConfirmRide = async (vehicle: any) => {
-    setSelectedVehicle(vehicle);
+  const handleConfirmRide = async (vehicle: VehicleOption) => {
+    if (!pickupLocation || !dropLocation) return;
+    setSelectedVehicle(vehicle as Vehicle);
     setLoading(true);
     try {
       const scheduledAt = scheduleData ? `${scheduleData.date}T${scheduleData.time}:00` : undefined;
@@ -203,6 +224,7 @@ export default function DashboardPage() {
         addNotification('success', 'Ride booked successfully! Finding driver...');
       }
     } catch (error) {
+      console.error(error);
       addNotification('error', 'Failed to book ride. Please try again.');
     } finally {
       setLoading(false);
@@ -215,7 +237,7 @@ export default function DashboardPage() {
     setPaymentStatus('processing');
     try {
       // 1. Create Razorpay order via backend
-      const rideId = activeRide._id || activeRide.id;
+      const rideId = activeRide._id || activeRide.id || activeRide.rideId || '';
       const orderData = await rideService.createPaymentOrder(rideId);
       
       // 2. Open Razorpay UI
@@ -226,7 +248,7 @@ export default function DashboardPage() {
         name: 'Drivo',
         description: `Ride Payment - ${activeRide.driver?.name || 'Trip'}`,
         order_id: orderData.orderId,
-        handler: async (response: any) => {
+        handler: async (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
           try {
             // 3. Verify payment via backend
             await rideService.verifyPayment({
@@ -240,7 +262,8 @@ export default function DashboardPage() {
             addNotification('success', 'Payment verified successfully!');
             // Move to Rating step
             setStep('rating');
-          } catch (err) {
+          } catch (error) {
+            console.error(error);
             setPaymentStatus('failed');
             addNotification('error', 'Payment verification failed');
           }
@@ -254,15 +277,17 @@ export default function DashboardPage() {
         }
       };
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const rzp = new (window as any).Razorpay(options);
-      rzp.on('payment.failed', function (response: any) {
+      rzp.on('payment.failed', function (response: { error: { description?: string } }) {
         setPaymentStatus('failed');
-        addNotification('error', response.error.description || 'Payment failed');
+        addNotification('error', response.error?.description || 'Payment failed');
       });
 
       rzp.open();
       
     } catch (error) {
+      console.error(error);
       setPaymentStatus('failed');
       addNotification('error', 'Failed to initialize payment. Please try again.');
     }
@@ -272,22 +297,23 @@ export default function DashboardPage() {
     if (!activeRide) return;
     try {
       setLoading(true);
-      const rideId = activeRide._id || activeRide.id;
+      const rideId = activeRide._id || activeRide.id || activeRide.rideId || '';
       await rideService.cancelRide(rideId);
       addNotification('success', 'Ride cancelled successfully.');
       resetDashboard();
-    } catch (err: any) {
-      addNotification('error', err.response?.data?.message || 'Failed to cancel ride');
+    } catch (error: unknown) {
+      const errObj = error as { response?: { data?: { message?: string } } };
+      addNotification('error', errObj.response?.data?.message || 'Failed to cancel ride');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleBookReturnRide = async (data?: any) => {
+  const handleBookReturnRide = async () => {
     if (!activeRide) return;
     try {
       setLoading(true);
-      const currentRideId = activeRide._id || activeRide.id;
+      const currentRideId = activeRide._id || activeRide.id || activeRide.rideId || '';
       const orderData = await rideService.createAdvancePaymentOrder(currentRideId);
       
       const options = {
@@ -297,7 +323,7 @@ export default function DashboardPage() {
         name: 'Drivo',
         description: 'Advance Payment for Return Ride',
         order_id: orderData.orderId,
-        handler: async (response: any) => {
+        handler: async (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
           try {
              setLoading(true);
              await rideService.verifyAdvancePayment({
@@ -307,28 +333,33 @@ export default function DashboardPage() {
                 razorpay_signature: response.razorpay_signature
              });
              
-             await rideService.bookAdvanceRide({
-                rideAId: currentRideId,
-                pickupLocation: activeRide.dropLocation,
-                dropLocation: activeRide.pickupLocation,
-                scheduledAt: new Date(Date.now() + 1000 * 60 * 60 * 2).toISOString() 
-             });
+             if (activeRide.dropLocation && activeRide.pickupLocation) {
+               await rideService.bookAdvanceRide({
+                  rideAId: currentRideId,
+                  pickupLocation: activeRide.dropLocation as unknown as Record<string, unknown>,
+                  dropLocation: activeRide.pickupLocation as unknown as Record<string, unknown>,
+                  scheduledAt: new Date(Date.now() + 1000 * 60 * 60 * 2).toISOString() 
+               });
+             }
              
              addNotification('success', 'Return ride booked successfully!');
              setShowReturnModal(false);
-          } catch(err) {
+          } catch (error) {
+             console.error(error);
              addNotification('error', 'Payment verification failed');
           } finally {
              setLoading(false);
           }
         }
       };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const rzp = new (window as any).Razorpay(options);
       rzp.on('payment.failed', function () {
         addNotification('error', 'Advance payment failed');
       });
       rzp.open();
-    } catch(err) {
+    } catch (error) {
+      console.error(error);
       addNotification('error', 'Failed to initiate return ride');
     } finally {
       setLoading(false);
@@ -340,11 +371,12 @@ export default function DashboardPage() {
     if (!activeRide) return;
     try {
       setLoading(true);
-      const rideId = activeRide._id || activeRide.id;
+      const rideId = activeRide._id || activeRide.id || activeRide.rideId || '';
       await rideService.submitRating(rideId, rating, comment);
       addNotification('success', 'Thank you for your rating!');
       resetDashboard();
-    } catch (err) {
+    } catch (error) {
+      console.error(error);
       addNotification('error', 'Failed to submit rating.');
       resetDashboard();
     } finally {
@@ -508,7 +540,7 @@ export default function DashboardPage() {
                     <div>
                       <p className="font-bold">{activeRide.driver.name}</p>
                       <p className="text-sm text-surface/60">
-                        {activeRide.driver.vehicleDetails || (activeRide.driver.vehicle ? (typeof activeRide.driver.vehicle === 'object' ? `${(activeRide.driver.vehicle as any).type} (${(activeRide.driver.vehicle as any).number})` : activeRide.driver.vehicle) : '')}
+                        {activeRide.driver.vehicleDetails || (activeRide.driver.vehicle ? (typeof activeRide.driver.vehicle === 'object' ? `${activeRide.driver.vehicle.type} (${activeRide.driver.vehicle.number})` : activeRide.driver.vehicle) : '')}
                       </p>
                       <p className="text-xs text-surface/50 mt-1">{activeRide.driver.phone}</p>
                     </div>

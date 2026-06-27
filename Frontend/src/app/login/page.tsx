@@ -41,8 +41,10 @@ export default function LoginPage() {
       const decoded = decodeToken(token);
       
       if (decoded) {
-        const isVerified = response.user.isVerified;
-        setCredentials({ id: decoded.id, role: decoded.role as any, email, isVerified }, token);
+        const isVerified = response.user?.isVerified ?? true;
+        const rawRole = decoded.role as string;
+        const userRole: 'USER' | 'DRIVER' | 'ADMIN' = rawRole === 'DRIVER' ? 'DRIVER' : rawRole === 'ADMIN' ? 'ADMIN' : 'USER';
+        setCredentials({ id: decoded.id, role: userRole, email, isVerified }, token);
         
         if (!isVerified) {
           sessionStorage.setItem('signup_email', email);
@@ -58,8 +60,9 @@ export default function LoginPage() {
         else if (decoded.role === 'DRIVER') router.push('/driver');
         else router.push('/dashboard');
       }
-    } catch (err: any) {
-      addNotification('error', err.response?.data?.message || 'Invalid credentials');
+    } catch (error: unknown) {
+      const errObj = error as { response?: { data?: { message?: string } } };
+      addNotification('error', errObj.response?.data?.message || 'Invalid credentials');
     } finally {
       setLoading(false);
     }
@@ -75,7 +78,7 @@ export default function LoginPage() {
             Drivo.
           </h1>
           <p className="text-xl text-surface/80 max-w-md">
-            The world's first automated return ride system. Experience premium mobility like never before.
+            The world&apos;s first automated return ride system. Experience premium mobility like never before.
           </p>
           <div className="pt-12 grid grid-cols-2 gap-8">
             <div className="space-y-2">
@@ -154,7 +157,7 @@ export default function LoginPage() {
           </button>
 
           <p className="text-center text-gray-600">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link href="/signup" className="font-bold text-primary hover:underline">
               Sign up
             </Link>

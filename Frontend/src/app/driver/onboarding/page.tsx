@@ -87,7 +87,8 @@ export default function DriverOnboardingPage() {
       setProgress(100);
       setStatus('PENDING');
       addNotification('success', 'Onboarding submitted successfully!');
-    } catch (err) {
+    } catch (error) {
+      console.error(error);
       clearInterval(progressInterval);
       setStatus('IDLE');
       setProgress(0);
@@ -97,16 +98,54 @@ export default function DriverOnboardingPage() {
 
   if (status === 'PENDING' || status === 'APPROVED' || status === 'REJECTED') {
     return (
-      <div className="flex-1 min-h-screen flex items-center justify-center bg-surface p-8">
-        <div className="max-w-md w-full bg-white rounded-3xl p-8 text-center space-y-6 shadow-xl">
+      <div className="flex-1 min-h-screen flex items-center justify-center bg-surface p-6 sm:p-10">
+        <div className="max-w-xl w-full bg-white rounded-[32px] p-8 text-center space-y-8 shadow-2xl border border-gray-100">
           {status === 'PENDING' && (
-            <>
-              <div className="w-20 h-20 bg-yellow-100 text-yellow-500 rounded-full flex items-center justify-center mx-auto">
+            <div className="space-y-6">
+              <div className="w-20 h-20 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
                 <ClockIcon />
               </div>
-              <h2 className="text-2xl font-bold">Under Review</h2>
-              <p className="text-gray-500">Your documents are currently being verified by our team. This usually takes 24-48 hours.</p>
-            </>
+              <div>
+                <span className="bg-yellow-100 text-yellow-800 text-xs px-3 py-1.5 rounded-full font-black uppercase tracking-widest">
+                  Verification Pending
+                </span>
+                <h2 className="text-3xl font-black text-primary tracking-tight mt-3">Application Under Review</h2>
+                <p className="text-gray-500 text-sm mt-1 max-w-md mx-auto">
+                  Our Coimbatore RTO verification team is reviewing your uploaded Licence and Vehicle RC.
+                </p>
+              </div>
+
+              <div className="bg-surface p-6 rounded-3xl text-left space-y-4 border border-gray-100">
+                <h4 className="text-xs font-black uppercase tracking-widest text-gray-400">Application Status & Timeline</h4>
+                <div className="space-y-3.5 text-xs font-bold text-gray-700">
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-[10px]">✓</div>
+                    <span>Personal Details & Identity Submitted</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-[10px]">✓</div>
+                    <span>Licence & Vehicle RC Uploaded</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-[10px] animate-pulse">⏳</div>
+                    <span>Coimbatore RTO & Background Verification</span>
+                  </div>
+                </div>
+                <div className="pt-3 border-t flex justify-between items-center text-xs">
+                  <span className="text-gray-400">Est. Review Time:</span>
+                  <span className="font-bold text-primary">24–48 Hours</span>
+                </div>
+              </div>
+
+              <div className="p-4 bg-blue-50/60 rounded-2xl text-xs text-blue-900 flex justify-between items-center">
+                <span>Need assistance with your application?</span>
+                <a href="mailto:support@loopra.in" className="font-bold text-primary hover:underline">Support Contact</a>
+              </div>
+
+              <Button onClick={() => router.push('/dashboard')} className="w-full h-12">
+                Return to Rider Dashboard
+              </Button>
+            </div>
           )}
           {status === 'APPROVED' && (
             <>
@@ -114,8 +153,8 @@ export default function DriverOnboardingPage() {
                 <CheckCircle size={40} />
               </div>
               <h2 className="text-2xl font-bold">Approved!</h2>
-              <p className="text-gray-500">Welcome to Drivo! You can now start accepting rides.</p>
-              <Button onClick={() => router.push('/driver')} className="w-full h-12">Go to Dashboard</Button>
+              <p className="text-gray-500">Welcome to Loopra Coimbatore! You can now start accepting rides.</p>
+              <Button onClick={() => router.push('/driver')} className="w-full h-12">Go to Driver Dashboard</Button>
             </>
           )}
           {status === 'REJECTED' && (
@@ -202,6 +241,7 @@ export default function DriverOnboardingPage() {
                         <span className="text-xs font-bold text-primary">{files.license?.name}</span>
                       </div>
                     ) : (
+                      /* eslint-disable-next-line @next/next/no-img-element */
                       <img src={previews.license} alt="License preview" className="max-h-24 mx-auto rounded" />
                     )
                   ) : (
@@ -230,6 +270,7 @@ export default function DriverOnboardingPage() {
                         <span className="text-xs font-bold text-primary">{files.rc?.name}</span>
                       </div>
                     ) : (
+                      /* eslint-disable-next-line @next/next/no-img-element */
                       <img src={previews.rc} alt="RC preview" className="max-h-24 mx-auto rounded" />
                     )
                   ) : (

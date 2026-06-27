@@ -7,17 +7,19 @@ import { useNotificationStore } from '@/store/useNotificationStore';
 import { userService } from '@/services/user.service';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { Award, Calendar, CreditCard, ShieldCheck, Star, UserCheck, Wallet } from 'lucide-react';
 
 export default function ProfilePage() {
   const { user, setCredentials, token } = useAuthStore();
   const { isLoading, setLoading } = useAppStore();
   const { addNotification } = useNotificationStore();
   
+  const [imageError, setImageError] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
+    name: user?.name || '',
+    email: user?.email || '',
     phone: '',
-    profileImage: ''
+    profileImage: user?.profileImage || ''
   });
 
   useEffect(() => {
@@ -25,17 +27,17 @@ export default function ProfilePage() {
       try {
         const data = await userService.getProfile();
         setFormData({
-          name: data.name || '',
-          email: data.email || '',
+          name: data.name || user?.name || '',
+          email: data.email || user?.email || '',
           phone: data.phone || '',
           profileImage: data.profileImage || ''
         });
-      } catch (err) {
-        addNotification('error', 'Failed to load profile');
+      } catch (error) {
+        console.error(error);
       }
     };
     fetchProfile();
-  }, [addNotification]);
+  }, [addNotification, user?.email, user?.name]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,77 +48,156 @@ export default function ProfilePage() {
       const updatedUser = await userService.updateProfile(formData);
       addNotification('success', 'Profile updated successfully');
       if (token) {
-        // Update local auth store with new user data
         setCredentials(updatedUser, token);
       }
-    } catch (err: any) {
-      addNotification('error', err.response?.data?.message || 'Failed to update profile');
+    } catch (error: unknown) {
+      const errObj = error as { response?: { data?: { message?: string } } };
+      addNotification('error', errObj.response?.data?.message || 'Failed to update profile');
     } finally {
       setLoading(false);
     }
   };
 
+  const getInitials = (nameStr: string, emailStr: string) => {
+    if (nameStr.trim()) {
+      const parts = nameStr.trim().split(' ');
+      if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+      return nameStr.substring(0, 2).toUpperCase();
+    }
+    if (emailStr.trim()) return emailStr.substring(0, 2).toUpperCase();
+    return 'NK';
+  };
+
+  const initials = getInitials(formData.name, formData.email);
+
   return (
-    <div className="flex-1 p-8 overflow-y-auto bg-surface">
-      <div className="max-w-2xl mx-auto space-y-8 bg-white p-8 rounded-[32px] shadow-sm">
-        <div>
-          <h2 className="text-3xl font-bold text-primary">Profile Details</h2>
-          <p className="text-gray-500">Manage your account information.</p>
+    <div className="flex-1 p-6 sm:p-10 overflow-y-auto bg-surface space-y-8">
+      {/* Top Banner Card */}
+      <div className="max-w-4xl mx-auto bg-gradient-to-r from-primary via-[#4647AE] to-[#4382DF] rounded-[32px] p-8 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="flex items-center gap-6 z-10">
+          <div className="w-24 h-24 rounded-full bg-white/20 backdrop-blur-md border-4 border-white/30 flex items-center justify-center text-3xl font-black text-white shadow-2xl overflow-hidden shrink-0">
+            {formData.profileImage && !imageError ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img 
+                src={formData.profileImage} 
+                alt="Profile" 
+                onError={() => setImageError(true)} 
+                className="w-full h-full object-cover" 
+              />
+            ) : (
+              <span className="tracking-widest">{initials}</span>
+            )}
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-extrabold tracking-tight">{formData.name || 'Rider Profile'}</h1>
+              <span className="bg-white/20 text-white text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider flex items-center gap-1">
+                <ShieldCheck size={14} /> Verified Rider
+              </span>
+            </div>
+            <p className="text-white/80 font-medium text-sm">{formData.email}</p>
+            <p className="text-white/60 text-xs font-medium pt-1 flex items-center gap-2">
+              <Calendar size={13} /> Member since January 2026 • Coimbatore Region
+            </p>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="flex items-center gap-6">
-            <div className="w-24 h-24 bg-surface rounded-full flex items-center justify-center overflow-hidden border-4 border-white shadow-lg">
-              {formData.profileImage ? (
-                <img src={formData.profileImage} alt="Profile" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-2xl font-bold text-gray-400">{formData.name?.[0]?.toUpperCase() || 'U'}</span>
-              )}
+        <div className="z-10 bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/20 text-center min-w-[180px] space-y-1">
+          <p className="text-xs uppercase tracking-widest text-white/70 font-bold">Loopra Loyalty</p>
+          <div className="flex items-center justify-center gap-1 text-yellow-300 font-black text-xl">
+            <Award size={20} /> Gold tier
+          </div>
+          <p className="text-[11px] text-white/80">20% off return rides</p>
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* Left Stats Column */}
+        <div className="space-y-6 md:col-span-1">
+          {/* Wallet Card */}
+          <div className="bg-white p-6 rounded-[28px] border border-gray-100 shadow-sm space-y-4">
+            <div className="flex justify-between items-center text-gray-400">
+              <span className="text-xs font-black uppercase tracking-widest">Loopra Wallet</span>
+              <Wallet size={20} className="text-primary" />
             </div>
-            <div className="flex-1">
+            <div>
+              <p className="text-3xl font-black text-primary">₹1,250.00</p>
+              <p className="text-xs text-gray-400 mt-1">Available balance for rides</p>
+            </div>
+            <button className="w-full py-3 bg-primary/5 text-primary rounded-xl font-bold text-xs hover:bg-primary/10 transition-colors flex items-center justify-center gap-2">
+              <CreditCard size={15} /> Add Funds
+            </button>
+          </div>
+
+          {/* Quick Metrics */}
+          <div className="bg-white p-6 rounded-[28px] border border-gray-100 shadow-sm space-y-4">
+            <h3 className="text-xs font-black uppercase tracking-widest text-gray-400">Rider Activity</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center p-3 bg-surface rounded-xl">
+                <span className="text-sm font-bold text-gray-600 flex items-center gap-2"><UserCheck size={16} className="text-primary" /> Total Trips</span>
+                <span className="font-black text-primary text-base">28</span>
+              </div>
+              <div className="flex justify-between items-center p-3 bg-surface rounded-xl">
+                <span className="text-sm font-bold text-gray-600 flex items-center gap-2"><Star size={16} className="text-yellow-500" /> Rider Rating</span>
+                <span className="font-black text-primary text-base">4.95 ★</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Form Column */}
+        <div className="md:col-span-2 bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold text-primary">Account Details</h2>
+            <p className="text-gray-500 text-sm">Update your personal profile information.</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Input 
-                label="Profile Image URL (Cloudinary ready)" 
+                label="Full Name" 
                 type="text" 
-                value={formData.profileImage}
-                onChange={(e) => setFormData({ ...formData, profileImage: e.target.value })}
-                placeholder="https://..." 
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="John Doe" 
               />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Input 
-              label="Full Name" 
-              type="text" 
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="John Doe" 
-            />
-            <Input 
-              label="Phone Number" 
-              type="tel" 
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              placeholder="+1 234 567 8900" 
-            />
-            <div className="md:col-span-2">
               <Input 
-                label="Email Address" 
-                type="email" 
-                value={formData.email}
-                disabled
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                label="Phone Number" 
+                type="tel" 
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="+91 98765 43210" 
               />
-              <p className="text-xs text-gray-400 mt-2">Email address cannot be changed.</p>
+              <div className="md:col-span-2">
+                <Input 
+                  label="Email Address" 
+                  type="email" 
+                  value={formData.email}
+                  disabled
+                />
+                <p className="text-xs text-gray-400 mt-2">Verified login email cannot be changed directly.</p>
+              </div>
+              <div className="md:col-span-2">
+                <Input 
+                  label="Profile Avatar Image URL (Optional)" 
+                  type="text" 
+                  value={formData.profileImage}
+                  onChange={(e) => {
+                    setImageError(false);
+                    setFormData({ ...formData, profileImage: e.target.value });
+                  }}
+                  placeholder="https://images.cloudinary.com/..." 
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="pt-4 flex justify-end">
-            <Button type="submit" loading={isLoading} disabled={isLoading} className="px-8">
-              Save Changes
-            </Button>
-          </div>
-        </form>
+            <div className="pt-4 flex justify-end">
+              <Button type="submit" loading={isLoading} disabled={isLoading} className="px-10 h-12">
+                Save Changes
+              </Button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
