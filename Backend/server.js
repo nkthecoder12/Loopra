@@ -16,7 +16,7 @@ const { razorpayWebhook } = require("./src/controllers/paymentController");
 const app = express();
 const server = http.createServer(app);
 
-app.set("trust proxy", 1);
+app.set("trust proxy", true);
 
 const io = new Server(server, {
   cors: socketCorsOptions,

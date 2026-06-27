@@ -31,19 +31,20 @@ const signup = async (req, res) => {
   if (!name || !email || !password) {
     return res.status(400).json({ success: false, message: "All fields are required" });
   }
+  const normalizedEmail = email.toLowerCase().trim();
   try {
-    const existingUser = await usermodel.findOne({ email });
+    const existingUser = await usermodel.findOne({ email: normalizedEmail });
     if (existingUser) {
       return res.status(409).json({ success: false, message: "User already exists" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await usermodel.create({ name, email, password: hashedPassword });
+    const newUser = await usermodel.create({ name: name.trim(), email: normalizedEmail, password: hashedPassword });
 
     // Auto-send OTP after signup
     try {
-      const otp = await otpService.generateOTP(email);
-      await sendEmail(email, "Verify your Loopra account", `Your OTP is: ${otp}`);
+      const otp = await otpService.generateOTP(normalizedEmail);
+      await sendEmail(normalizedEmail, "Verify your Loopra account", `Your OTP is: ${otp}`);
     } catch (otpErr) {
       console.error("Auto OTP request failed during signup:", otpErr.message);
     }
@@ -65,8 +66,9 @@ const login = async (req, res) => {
   if (!email || !password) {
     return res.status(400).json({ success: false, message: "All fields are required" });
   }
+  const normalizedEmail = email.toLowerCase().trim();
   try {
-    const user = await usermodel.findOne({ email });
+    const user = await usermodel.findOne({ email: normalizedEmail });
     if (!user) {
       return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
@@ -113,13 +115,14 @@ const sendotp = async (req, res) => {
   if (!email) {
     return res.status(400).json({ success: false, message: "Email is required" });
   }
+  const normalizedEmail = email.toLowerCase().trim();
   try {
-    const user = await usermodel.findOne({ email });
+    const user = await usermodel.findOne({ email: normalizedEmail });
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
-    const otp = await otpService.generateOTP(email);
-    await sendEmail(email, "Your Loopra OTP", `Your OTP is: ${otp}. Valid for 5 minutes.`);
+    const otp = await otpService.generateOTP(normalizedEmail);
+    await sendEmail(normalizedEmail, "Your Loopra OTP", `Your OTP is: ${otp}. Valid for 5 minutes.`);
     return res.status(200).json({ success: true, message: "OTP sent successfully" });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -133,14 +136,15 @@ const verifyOtp = async (req, res) => {
   if (!email || !otp) {
     return res.status(400).json({ success: false, message: "Email and OTP are required" });
   }
+  const normalizedEmail = email.toLowerCase().trim();
   try {
-    const user = await usermodel.findOne({ email });
+    const user = await usermodel.findOne({ email: normalizedEmail });
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
     
     // Call the enterprise OTP service for verification
-    await otpService.verifyOTP(email, otp);
+    await otpService.verifyOTP(normalizedEmail, otp);
 
     user.isVerified = true;
     await user.save();
@@ -180,13 +184,14 @@ const forgotPassword = async (req, res) => {
   if (!email) {
     return res.status(400).json({ success: false, message: "Email is required" });
   }
+  const normalizedEmail = email.toLowerCase().trim();
   try {
-    const user = await usermodel.findOne({ email });
+    const user = await usermodel.findOne({ email: normalizedEmail });
     if (!user) {
       return res.status(200).json({ success: true, message: "If an account exists, a verification code was sent." });
     }
-    const otp = await otpService.generateOTP(email);
-    await sendEmail(email, "Reset your Loopra password", `Your password reset OTP code is: ${otp}. Valid for 5 minutes.`);
+    const otp = await otpService.generateOTP(normalizedEmail);
+    await sendEmail(normalizedEmail, "Reset your Loopra password", `Your password reset OTP code is: ${otp}. Valid for 5 minutes.`);
     return res.status(200).json({ success: true, message: "Password reset OTP sent to your email." });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
