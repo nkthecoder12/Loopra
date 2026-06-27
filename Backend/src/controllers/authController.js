@@ -173,4 +173,45 @@ const getMe = async (req, res) => {
   }
 };
 
-module.exports = { signup, login, logout, sendotp, verifyOtp, getMe };
+// ─── FORGOT PASSWORD ─────────────────────────────────────────────────────────
+
+const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ success: false, message: "Email is required" });
+  }
+  try {
+    const user = await usermodel.findOne({ email });
+    if (!user) {
+      return res.status(200).json({ success: true, message: "If an account exists, a verification code was sent." });
+    }
+    const otp = await otpService.generateOTP(email);
+    await sendEmail(email, "Reset your Loopra password", `Your password reset OTP code is: ${otp}. Valid for 5 minutes.`);
+    return res.status(200).json({ success: true, message: "Password reset OTP sent to your email." });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ─── REFRESH TOKEN ───────────────────────────────────────────────────────────
+
+const refreshToken = async (req, res) => {
+  try {
+    const token = req.cookies?.token || req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ success: false, message: "No token provided" });
+    }
+    const decoded = jwt.verify(token, jwtSecret);
+    const user = await usermodel.findById(decoded.id);
+    if (!user) {
+      return res.status(401).json({ success: false, message: "User no longer exists" });
+    }
+    const newToken = signToken(user);
+    setCookie(res, newToken);
+    return res.status(200).json({ success: true, token: newToken, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
+  } catch (error) {
+    return res.status(401).json({ success: false, message: "Invalid or expired token" });
+  }
+};
+
+module.exports = { signup, login, logout, sendotp, verifyOtp, getMe, forgotPassword, refreshToken };

@@ -1,20 +1,23 @@
-const LOCAL_ORIGINS = [
+const HARDCODED_ALLOWED_ORIGINS = [
+  "https://www.loopra.co.in",
+  "https://loopra.co.in",
+  "https://loopra-gamma.vercel.app",
   "http://localhost:3000",
   "http://localhost:3001",
 ];
 
-const DEFAULT_PRODUCTION_FRONTEND = "https://loopra-gamma.vercel.app";
+const DEFAULT_PRODUCTION_FRONTEND = "https://www.loopra.co.in";
 
 /**
- * Build allowed CORS / Socket.io origins from environment.
- * FRONTEND_URL — primary production frontend
- * CORS_ALLOWED_ORIGINS — comma-separated extra origins
+ * Build allowed CORS / Socket.io origins from environment + hardcoded defaults.
  */
 function getAllowedOrigins() {
-  const origins = new Set(LOCAL_ORIGINS);
+  const origins = new Set(HARDCODED_ALLOWED_ORIGINS);
 
-  const frontendUrl = (process.env.FRONTEND_URL || DEFAULT_PRODUCTION_FRONTEND).trim().replace(/\/$/, "");
-  origins.add(frontendUrl);
+  if (process.env.FRONTEND_URL) {
+    const frontendUrl = process.env.FRONTEND_URL.trim().replace(/\/$/, "");
+    if (frontendUrl) origins.add(frontendUrl);
+  }
 
   if (process.env.CORS_ALLOWED_ORIGINS) {
     process.env.CORS_ALLOWED_ORIGINS.split(",").forEach((origin) => {
@@ -31,9 +34,10 @@ function isOriginAllowed(origin) {
 
   const lowerOrigin = origin.toLowerCase().trim().replace(/\/$/, "");
 
-  if (lowerOrigin === "https://loopra-gamma.vercel.app") return true;
+  // Allow explicit custom domains & localhost
+  if (HARDCODED_ALLOWED_ORIGINS.includes(lowerOrigin)) return true;
 
-  // Vercel preview/production deployments
+  // Vercel preview/production deployments matching *.vercel.app
   if (/^https:\/\/[\w.-]+\.vercel\.app$/.test(lowerOrigin)) return true;
 
   const allowed = getAllowedOrigins().map(o => o.toLowerCase().trim().replace(/\/$/, ""));
@@ -44,14 +48,17 @@ function isOriginAllowed(origin) {
 
 const corsOptions = {
   credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
   origin(origin, callback) {
     if (!origin) {
-      return callback(null, false);
+      return callback(null, true);
     }
     if (isOriginAllowed(origin)) {
-      callback(null, origin);
+      callback(null, true);
     } else {
-      callback(new Error(`CORS blocked: ${origin} not allowed`));
+      console.warn(`[CORS Blocked]: ${origin}`);
+      callback(null, false);
     }
   },
   optionsSuccessStatus: 200,
@@ -60,12 +67,13 @@ const corsOptions = {
 const socketCorsOptions = {
   origin(origin, callback) {
     if (!origin) {
-      return callback(null, false);
+      return callback(null, true);
     }
     if (isOriginAllowed(origin)) {
-      callback(null, origin);
+      callback(null, true);
     } else {
-      callback(new Error(`Socket CORS blocked: ${origin} not allowed`));
+      console.warn(`[Socket CORS Blocked]: ${origin}`);
+      callback(null, false);
     }
   },
   credentials: true,

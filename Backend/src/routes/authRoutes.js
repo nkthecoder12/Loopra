@@ -1,6 +1,6 @@
 const express = require("express");
 const authrouter = express.Router();
-const { signup, login, logout, sendotp, verifyOtp, getMe } = require("../controllers/authController");
+const { signup, login, logout, sendotp, verifyOtp, getMe, forgotPassword, refreshToken } = require("../controllers/authController");
 const { uploadProfileImage } = require("../controllers/imageupload");
 const upload = require("../middlewares/uploadMiddleware");
 const authMiddleware = require("../middlewares/authMiddleware");
@@ -9,13 +9,15 @@ const { loginLimiter, sendOtpLimiter, verifyOtpLimiter } = require("../middlewar
 authrouter.post("/signup", signup);
 authrouter.post("/login", loginLimiter, login);
 authrouter.post("/logout", logout);
-authrouter.get("/me", authMiddleware, getMe);                                    // Issue #5: session hydration
+authrouter.post("/refresh-token", refreshToken);
+authrouter.post("/refreshtoken", refreshToken);
+authrouter.post("/forgot-password", sendOtpLimiter, forgotPassword);
+authrouter.post("/forgotpassword", sendOtpLimiter, forgotPassword);
+authrouter.get("/me", authMiddleware, getMe);
 
-// Issue #6: /sendotp + alias /send-otp  (frontend calls /send-otp)
 authrouter.post("/sendotp", sendOtpLimiter, sendotp);
 authrouter.post("/send-otp", sendOtpLimiter, sendotp);
 
-// Issue #7: /verifyotp + alias /verify-otp  (frontend calls /verify-otp)
 authrouter.post("/verifyotp", verifyOtpLimiter, verifyOtp);
 authrouter.post("/verify-otp", verifyOtpLimiter, verifyOtp);
 

@@ -1,6 +1,6 @@
 export const PRODUCTION_API_URL = "https://loopra.onrender.com/api";
 export const PRODUCTION_SOCKET_URL = "https://loopra.onrender.com";
-export const PRODUCTION_FRONTEND_URL = "https://loopra-gamma.vercel.app";
+export const PRODUCTION_FRONTEND_URL = "https://www.loopra.co.in";
 
 function resolveUrl(
   envValue: string | undefined,

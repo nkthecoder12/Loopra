@@ -28,6 +28,7 @@ app.set("io", io);
 connectDB();
 
 app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 // Razorpay webhook MUST receive raw body — register before express.json()
 app.post(

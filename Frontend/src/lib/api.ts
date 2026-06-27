@@ -9,7 +9,7 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
   // Auth uses Bearer token in localStorage (cross-origin safe on Vercel + Render)
-  withCredentials: false,
+  withCredentials: true,
   timeout: 30000,
 });
 
