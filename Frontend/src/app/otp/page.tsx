@@ -17,7 +17,7 @@ export default function OTPPage() {
   const [loading, setLoading] = useState(false);
   const [email] = useState(() => typeof window !== 'undefined' ? sessionStorage.getItem('signup_email') || '' : '');
   const { addNotification } = useNotificationStore();
-  const { setCredentials } = useAuthStore();
+  const { setCredentials, isAuthenticated, isHydrating, user } = useAuthStore();
 
   useEffect(() => {
     if (timer > 0) {
@@ -27,10 +27,16 @@ export default function OTPPage() {
   }, [timer]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && !sessionStorage.getItem('signup_email')) {
-      router.push('/signup');
+    if (!isHydrating && isAuthenticated && user && user.isVerified) {
+      const targetPath = user.role === 'ADMIN' ? '/admin' : user.role === 'DRIVER' ? '/driver' : '/dashboard';
+      router.replace(targetPath);
+      return;
     }
-  }, [router]);
+
+    if (typeof window !== 'undefined' && !sessionStorage.getItem('signup_email') && !isAuthenticated) {
+      router.replace('/signup');
+    }
+  }, [isHydrating, isAuthenticated, user, router]);
 
   const handleVerify = async () => {
     const otpCode = otp.join('');
@@ -40,23 +46,24 @@ export default function OTPPage() {
     }
     setLoading(true);
     try {
-      const response = await authService.verifyOTP(email, otpCode);
+      const normalizedEmail = email.toLowerCase().trim();
+      const response = await authService.verifyOTP(normalizedEmail, otpCode);
       const { token } = response;
       const decoded = decodeToken(token);
       if (decoded) {
         const rawRole = decoded.role as string;
         const userRole: 'USER' | 'DRIVER' | 'ADMIN' = rawRole === 'DRIVER' ? 'DRIVER' : rawRole === 'ADMIN' ? 'ADMIN' : 'USER';
-        setCredentials({ id: decoded.id, role: userRole, email }, token);
+        
+        setCredentials({ id: decoded.id, role: userRole, email: normalizedEmail, isVerified: true }, token);
         addNotification('success', 'Identity verified successfully!');
         sessionStorage.removeItem('signup_email');
-        if (userRole === 'ADMIN') router.push('/admin');
-        else if (userRole === 'DRIVER') router.push('/driver');
-        else router.push('/dashboard');
+        
+        const targetPath = userRole === 'ADMIN' ? '/admin' : userRole === 'DRIVER' ? '/driver' : '/dashboard';
+        router.replace(targetPath);
       }
     } catch (error: unknown) {
       const errObj = error as { response?: { data?: { message?: string } } };
       addNotification('error', errObj.response?.data?.message || 'Invalid OTP');
-    } finally {
       setLoading(false);
     }
   };

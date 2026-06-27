@@ -14,22 +14,26 @@ import { decodeToken } from '@/utils/jwt';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { setCredentials } = useAuthStore();
+  const { setCredentials, isAuthenticated, isHydrating, user } = useAuthStore();
   const { isLoading, setLoading } = useAppStore();
   const { addNotification } = useNotificationStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   React.useEffect(() => {
-    if (!useAuthStore.getState().isHydrating && useAuthStore.getState().isAuthenticated) {
-      const user = useAuthStore.getState().user;
-      if (user) {
-        if (user.role === 'ADMIN') router.push('/admin');
-        else if (user.role === 'DRIVER') router.push('/driver');
-        else router.push('/dashboard');
+    if (!isHydrating && isAuthenticated && user) {
+      if (!user.isVerified) {
+        sessionStorage.setItem('signup_email', user.email);
+        router.replace('/otp');
+      } else if (user.role === 'ADMIN') {
+        router.replace('/admin');
+      } else if (user.role === 'DRIVER') {
+        router.replace('/driver');
+      } else {
+        router.replace('/dashboard');
       }
     }
-  }, [router]);
+  }, [isHydrating, isAuthenticated, user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +41,7 @@ export default function LoginPage() {
     setLoading(true);
     
     try {
-      const response = await authService.login(email, password);
+      const response = await authService.login(email.toLowerCase().trim(), password);
       const { token } = response;
       const decoded = decodeToken(token);
       
@@ -45,26 +49,23 @@ export default function LoginPage() {
         const isVerified = response.user?.isVerified ?? true;
         const rawRole = decoded.role as string;
         const userRole: 'USER' | 'DRIVER' | 'ADMIN' = rawRole === 'DRIVER' ? 'DRIVER' : rawRole === 'ADMIN' ? 'ADMIN' : 'USER';
-        setCredentials({ id: decoded.id, role: userRole, email, isVerified }, token);
+        
+        setCredentials({ id: decoded.id, role: userRole, email: email.toLowerCase().trim(), isVerified }, token);
         
         if (!isVerified) {
-          sessionStorage.setItem('signup_email', email);
+          sessionStorage.setItem('signup_email', email.toLowerCase().trim());
           addNotification('info', 'Please verify your email first.');
-          router.push('/otp');
+          router.replace('/otp');
           return;
         }
 
         addNotification('success', 'Logged in successfully!');
-        
-        // Redirect based on role
-        if (decoded.role === 'ADMIN') router.push('/admin');
-        else if (decoded.role === 'DRIVER') router.push('/driver');
-        else router.push('/dashboard');
+        const targetPath = userRole === 'ADMIN' ? '/admin' : userRole === 'DRIVER' ? '/driver' : '/dashboard';
+        router.replace(targetPath);
       }
     } catch (error: unknown) {
       const errObj = error as { response?: { data?: { message?: string } } };
       addNotification('error', errObj.response?.data?.message || 'Invalid credentials');
-    } finally {
       setLoading(false);
     }
   };
@@ -73,7 +74,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen bg-surface">
       {/* Left Side - Visual */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-black overflow-hidden items-center justify-center">
-        <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900 to-primary-brand/40 opacity-90 z-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900 to-slate-900 opacity-90 z-10"></div>
         <div className="relative z-20 p-12 text-white space-y-8 max-w-xl">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 bg-white rounded-2xl p-2 flex items-center justify-center shadow-2xl">
@@ -84,22 +85,22 @@ export default function LoginPage() {
             </h1>
           </div>
           <p className="text-xl text-zinc-300 font-medium leading-relaxed">
-            The world&apos;s premier automated return ride system. Experience seamless, instant mobility like never before.
+            Designed for modern urban mobility. Connecting riders and drivers with simple, secure, and affordable city travel.
           </p>
           <div className="pt-8 grid grid-cols-2 gap-8 border-t border-zinc-800">
             <div className="space-y-1">
-              <h3 className="text-4xl font-black text-white">1M+</h3>
-              <p className="text-sm font-semibold text-zinc-400">Active Riders</p>
+              <h3 className="text-2xl font-black text-white">Coimbatore</h3>
+              <p className="text-sm font-semibold text-zinc-400">Launch Region</p>
             </div>
             <div className="space-y-1">
-              <h3 className="text-4xl font-black text-white">4.9★</h3>
-              <p className="text-sm font-semibold text-zinc-400">User Rating</p>
+              <h3 className="text-2xl font-black text-white">Reliable & Safe</h3>
+              <p className="text-sm font-semibold text-zinc-400">Verified Mobility</p>
             </div>
           </div>
         </div>
-        {/* Animated Background Elements */}
-        <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-accent/20 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary-brand/30 rounded-full blur-3xl"></div>
+        {/* Background Gradients */}
+        <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-zinc-800/40 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-slate-800/50 rounded-full blur-3xl"></div>
       </div>
 
       {/* Right Side - Form */}
@@ -146,7 +147,7 @@ export default function LoginPage() {
               </Link>
             </div>
 
-            <Button className="w-full h-14 text-base font-bold bg-black text-white hover:bg-zinc-800 rounded-2xl shadow-lg active:scale-[0.99]" loading={isLoading} disabled={isLoading}>
+            <Button className="w-full h-14 text-base font-bold bg-black text-white hover:bg-zinc-800 rounded-2xl shadow-lg active:scale-[0.99] touch-target" loading={isLoading} disabled={isLoading}>
               Sign In
             </Button>
           </form>
