@@ -17,7 +17,7 @@ const driverSchema = new mongoose.Schema(
     // Issue #19: Add onboardingStatus for admin approval gate
     onboardingStatus: {
       type: String,
-      enum: ["PENDING", "APPROVED", "REJECTED"],
+      enum: ["PENDING", "APPROVED", "REJECTED", "SUSPENDED", "INACTIVE", "DELETED"],
       default: "PENDING",
       index: true,
     },
@@ -39,7 +39,10 @@ const driverSchema = new mongoose.Schema(
 
     // Account flags
     isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: Date, default: null },
     isActive: { type: Boolean, default: true },
+    suspendedAt: { type: Date, default: null },
+    suspensionReason: { type: String, default: null },
 
     // Ride references
     currentRideId: { type: mongoose.Schema.Types.ObjectId, ref: "Ride", default: null },

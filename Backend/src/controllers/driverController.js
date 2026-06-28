@@ -1,73 +1,232 @@
 const Driver = require("../models/Driver");
+const DriverApplication = require("../models/DriverApplication");
 const Ride = require("../models/Ride");
 
-// ─── ONBOARD ─────────────────────────────────────────────────────────────────
-// Issue #18: POST /driver/onboard — accepts FormData, creates driver record
+// Helper function to extract Cloudinary metadata from multer file object
+const extractFileMeta = (file) => {
+  if (!file) return null;
+  return {
+    url: file.path || file.secure_url || file.url || "",
+    publicId: file.filename || file.public_id || "",
+    fileName: file.originalname || "document",
+    fileSize: file.size || 0,
+    uploadedAt: new Date(),
+    verificationStatus: "PENDING",
+    reviewNotes: "",
+  };
+};
 
-const onboard = async (req, res, next) => {
+// ─── SUBMIT / SAVE APPLICATION ───────────────────────────────────────────────
+const submitApplication = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const { name, phone, vehicleType, vehicleNumber } = req.body;
+    const files = req.files || {};
+    const body = req.body || {};
 
-    if (!name || !phone || !vehicleType || !vehicleNumber) {
-      return res.status(400).json({ success: false, message: "All fields are required: name, phone, vehicleType, vehicleNumber" });
-    }
+    // Check if an application already exists
+    let application = await DriverApplication.findOne({ userId });
 
-    // Check if already onboarded
-    const existing = await Driver.findOne({ userId });
-    if (existing) {
+    // Prevent submitting multiple applications if already APPROVED or PENDING
+    if (application && ["APPROVED", "PENDING", "SUBMITTED"].includes(application.status) && !req.body.isResubmission) {
       return res.status(409).json({
         success: false,
-        message: "Driver profile already exists",
-        onboardingStatus: existing.onboardingStatus,
+        message: `An application is already ${application.status.toLowerCase()}. Duplicate applications are not allowed.`,
+        application,
       });
     }
 
-    // Check phone uniqueness
-    const phoneTaken = await Driver.findOne({ phone });
-    if (phoneTaken) {
-      return res.status(409).json({ success: false, message: "Phone number already registered" });
+    // Parse JSON field structures if passed as stringified JSON in FormData
+    const personalDetails = typeof body.personalDetails === "string" ? JSON.parse(body.personalDetails) : (body.personalDetails || {});
+    const licenseDetails = typeof body.licenseDetails === "string" ? JSON.parse(body.licenseDetails) : (body.licenseDetails || {});
+    const vehicleDetails = typeof body.vehicleDetails === "string" ? JSON.parse(body.vehicleDetails) : (body.vehicleDetails || {});
+    const bankDetails = typeof body.bankDetails === "string" ? JSON.parse(body.bankDetails) : (body.bankDetails || {});
+
+    // Construct metadata for files
+    const profilePhotoMeta = extractFileMeta(files.profilePhoto?.[0]);
+    const licenseFrontMeta = extractFileMeta(files.licenseFront?.[0]);
+    const licenseBackMeta = extractFileMeta(files.licenseBack?.[0]);
+    const vehiclePhotoMeta = extractFileMeta(files.vehiclePhoto?.[0]);
+    const rcBookMeta = extractFileMeta(files.rcBook?.[0] || files.rc?.[0]);
+    const insuranceMeta = extractFileMeta(files.insurance?.[0]);
+    const pollutionMeta = extractFileMeta(files.pollutionCertificate?.[0]);
+    const govtIdMeta = extractFileMeta(files.govtId?.[0]);
+    const selfieMeta = extractFileMeta(files.selfie?.[0]);
+
+    if (!application) {
+      application = new DriverApplication({
+        userId,
+        status: body.isDraft ? "DRAFT" : "SUBMITTED",
+        personalDetails: {
+          fullName: personalDetails.fullName || body.name || req.user.name || "",
+          phone: personalDetails.phone || body.phone || req.user.phone || "",
+          email: personalDetails.email || body.email || req.user.email || "",
+          dob: personalDetails.dob ? new Date(personalDetails.dob) : null,
+          gender: personalDetails.gender || "other",
+          address: personalDetails.address || "",
+          city: personalDetails.city || "Coimbatore",
+          state: personalDetails.state || "Tamil Nadu",
+          pincode: personalDetails.pincode || "",
+          emergencyContact: personalDetails.emergencyContact || "",
+          profilePhoto: profilePhotoMeta || {},
+        },
+        licenseDetails: {
+          licenseNumber: licenseDetails.licenseNumber || body.licenseNumber || "",
+          issueDate: licenseDetails.issueDate ? new Date(licenseDetails.issueDate) : null,
+          expiryDate: licenseDetails.expiryDate ? new Date(licenseDetails.expiryDate) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+          licenseFront: licenseFrontMeta || extractFileMeta(files.license?.[0]) || {},
+          licenseBack: licenseBackMeta || {},
+        },
+        vehicleDetails: {
+          vehicleType: vehicleDetails.vehicleType || body.vehicleType || "car",
+          brand: vehicleDetails.brand || "",
+          model: vehicleDetails.model || "",
+          year: vehicleDetails.year || "",
+          number: vehicleDetails.number || body.vehicleNumber || "",
+          colour: vehicleDetails.colour || "",
+          vehiclePhoto: vehiclePhotoMeta || {},
+        },
+        documents: {
+          rcBook: rcBookMeta || {},
+          insurance: insuranceMeta || {},
+          pollutionCertificate: pollutionMeta || {},
+          govtId: govtIdMeta || {},
+          selfie: selfieMeta || {},
+        },
+        bankDetails: {
+          accountHolder: bankDetails.accountHolder || "",
+          accountNumber: bankDetails.accountNumber || "",
+          ifsc: bankDetails.ifsc || "",
+          bankName: bankDetails.bankName || "",
+          branch: bankDetails.branch || "",
+          upiId: bankDetails.upiId || "",
+        },
+        timeline: [
+          {
+            status: body.isDraft ? "DRAFT_SAVED" : "SUBMITTED",
+            timestamp: new Date(),
+            note: body.isDraft ? "Draft application saved" : "Application submitted for admin review",
+            performedBy: userId,
+          },
+        ],
+      });
+    } else {
+      // Update existing application
+      if (!body.isDraft) {
+        application.status = "SUBMITTED";
+        application.submittedAt = new Date();
+      }
+
+      if (personalDetails.fullName || body.name) application.personalDetails.fullName = personalDetails.fullName || body.name;
+      if (personalDetails.phone || body.phone) application.personalDetails.phone = personalDetails.phone || body.phone;
+      if (personalDetails.email || body.email) application.personalDetails.email = personalDetails.email || body.email;
+      if (personalDetails.address) application.personalDetails.address = personalDetails.address;
+      if (personalDetails.city) application.personalDetails.city = personalDetails.city;
+      if (personalDetails.emergencyContact) application.personalDetails.emergencyContact = personalDetails.emergencyContact;
+      if (profilePhotoMeta) application.personalDetails.profilePhoto = profilePhotoMeta;
+
+      if (licenseDetails.licenseNumber || body.licenseNumber) application.licenseDetails.licenseNumber = licenseDetails.licenseNumber || body.licenseNumber;
+      if (licenseDetails.expiryDate) application.licenseDetails.expiryDate = new Date(licenseDetails.expiryDate);
+      if (licenseFrontMeta) application.licenseDetails.licenseFront = licenseFrontMeta;
+      if (licenseBackMeta) application.licenseDetails.licenseBack = licenseBackMeta;
+
+      if (vehicleDetails.vehicleType || body.vehicleType) application.vehicleDetails.vehicleType = vehicleDetails.vehicleType || body.vehicleType;
+      if (vehicleDetails.number || body.vehicleNumber) application.vehicleDetails.number = vehicleDetails.number || body.vehicleNumber;
+      if (vehiclePhotoMeta) application.vehicleDetails.vehiclePhoto = vehiclePhotoMeta;
+
+      if (rcBookMeta) application.documents.rcBook = rcBookMeta;
+      if (insuranceMeta) application.documents.insurance = insuranceMeta;
+      if (pollutionMeta) application.documents.pollutionCertificate = pollutionMeta;
+      if (govtIdMeta) application.documents.govtId = govtIdMeta;
+      if (selfieMeta) application.documents.selfie = selfieMeta;
+
+      if (bankDetails.accountHolder) application.bankDetails.accountHolder = bankDetails.accountHolder;
+      if (bankDetails.accountNumber) application.bankDetails.accountNumber = bankDetails.accountNumber;
+      if (bankDetails.ifsc) application.bankDetails.ifsc = bankDetails.ifsc;
+      if (bankDetails.upiId) application.bankDetails.upiId = bankDetails.upiId;
+
+      application.timeline.push({
+        status: body.isDraft ? "DRAFT_UPDATED" : "RESUBMITTED",
+        timestamp: new Date(),
+        note: body.isDraft ? "Draft updated" : "Application resubmitted with updated details/documents",
+        performedBy: userId,
+      });
     }
 
-    const driverData = {
-      userId,
-      name,
-      phone,
-      vehicle: { type: vehicleType, number: vehicleNumber },
-      onboardingStatus: "PENDING",
-      documents: {
-        license: req.files?.license?.[0]?.path || req.files?.license?.[0]?.filename || null,
-        rc: req.files?.rc?.[0]?.path || req.files?.rc?.[0]?.filename || null,
-      },
-    };
+    await application.save();
 
-    const driver = await Driver.create(driverData);
+    // Also sync/create initial PENDING record in Driver collection for backward compatibility
+    let driver = await Driver.findOne({ userId });
+    if (!driver) {
+      driver = await Driver.create({
+        userId,
+        name: application.personalDetails.fullName,
+        phone: application.personalDetails.phone,
+        vehicle: {
+          type: application.vehicleDetails.vehicleType,
+          number: application.vehicleDetails.number,
+        },
+        onboardingStatus: "PENDING",
+        documents: {
+          license: application.licenseDetails.licenseFront?.url || null,
+          rc: application.documents.rcBook?.url || null,
+        },
+      });
+    } else {
+      driver.onboardingStatus = "PENDING";
+      await driver.save();
+    }
 
     return res.status(201).json({
       success: true,
-      message: "Onboarding submitted. Pending admin approval.",
+      message: body.isDraft ? "Draft saved successfully" : "Driver application submitted successfully for verification.",
+      application,
       driverId: driver._id,
-      onboardingStatus: driver.onboardingStatus,
     });
   } catch (err) {
     next(err);
   }
 };
 
-// ─── GET STATUS ───────────────────────────────────────────────────────────────
-
-const getStatus = async (req, res, next) => {
+// ─── GET APPLICATION DETAILS ────────────────────────────────────────────────
+const getApplication = async (req, res, next) => {
   try {
-    const driver = await Driver.findOne({ userId: req.user.id });
-    if (!driver) {
-      return res.status(404).json({ success: false, message: "Driver profile not found", onboardingStatus: null });
-    }
+    const userId = req.user.id;
+    const application = await DriverApplication.findOne({ userId });
+    const driver = await Driver.findOne({ userId });
+
     return res.status(200).json({
       success: true,
-      onboardingStatus: driver.onboardingStatus,
-      isAvailable: driver.isAvailable,
-      isActive: driver.isActive,
-      currentRideId: driver.currentRideId,
+      application,
+      onboardingStatus: driver?.onboardingStatus || application?.status || null,
+      isAvailable: driver?.isAvailable || false,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─── LEGACY ONBOARD (Backward Compatibility) ──────────────────────────────────
+const onboard = async (req, res, next) => {
+  return submitApplication(req, res, next);
+};
+
+// ─── GET STATUS ───────────────────────────────────────────────────────────────
+const getStatus = async (req, res, next) => {
+  try {
+    const driver = await Driver.findOne({ userId: req.user.id, isDeleted: false });
+    const application = await DriverApplication.findOne({ userId: req.user.id });
+
+    if (!driver && !application) {
+      return res.status(404).json({ success: false, message: "Driver profile not found", onboardingStatus: null });
+    }
+
+    return res.status(200).json({
+      success: true,
+      onboardingStatus: driver?.onboardingStatus || application?.status || "PENDING",
+      isAvailable: driver?.isAvailable || false,
+      isActive: driver?.isActive ?? true,
+      currentRideId: driver?.currentRideId || null,
+      application,
     });
   } catch (err) {
     next(err);
@@ -75,8 +234,6 @@ const getStatus = async (req, res, next) => {
 };
 
 // ─── TOGGLE STATUS ───────────────────────────────────────────────────────────
-// Issue #17: PATCH /driver/status
-
 const toggleStatus = async (req, res, next) => {
   try {
     const { isOnline } = req.body;
@@ -84,7 +241,7 @@ const toggleStatus = async (req, res, next) => {
       return res.status(400).json({ success: false, message: "isOnline must be a boolean" });
     }
 
-    const driver = await Driver.findOne({ userId: req.user.id });
+    const driver = await Driver.findOne({ userId: req.user.id, isDeleted: false });
     if (!driver) {
       return res.status(404).json({ success: false, message: "Driver profile not found" });
     }
@@ -106,16 +263,13 @@ const toggleStatus = async (req, res, next) => {
 };
 
 // ─── GET EARNINGS ─────────────────────────────────────────────────────────────
-// Issue #17: GET /driver/earnings
-
 const getEarnings = async (req, res, next) => {
   try {
-    const driver = await Driver.findOne({ userId: req.user.id });
+    const driver = await Driver.findOne({ userId: req.user.id, isDeleted: false });
     if (!driver) {
       return res.status(404).json({ success: false, message: "Driver profile not found" });
     }
 
-    // Get today's completed rides for live total
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
@@ -131,12 +285,19 @@ const getEarnings = async (req, res, next) => {
       success: true,
       total: todayEarnings,
       rides: todayRides.length,
-      rating: driver.earnings.rating || 5.0,
-      acceptanceRate: driver.earnings.acceptanceRate || 100,
+      rating: driver.earnings?.rating || 5.0,
+      acceptanceRate: driver.earnings?.acceptanceRate || 100,
     });
   } catch (err) {
     next(err);
   }
 };
 
-module.exports = { onboard, getStatus, toggleStatus, getEarnings };
+module.exports = {
+  submitApplication,
+  getApplication,
+  onboard,
+  getStatus,
+  toggleStatus,
+  getEarnings,
+};

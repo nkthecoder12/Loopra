@@ -11,13 +11,11 @@ export const driverService = {
     }
   },
 
-  // Issue #17: was POST /driver/status → PATCH /driver/status
   toggleAvailability: async (isOnline: boolean) => {
     const { data } = await api.patch('/driver/status', { isOnline });
     return data;
   },
 
-  // Issue #17: Add getStatus for onboarding status check
   getStatus: async () => {
     try {
       const { data } = await api.get('/driver/status');
@@ -27,6 +25,24 @@ export const driverService = {
       if (errObj.response?.status === 404) return null;
       throw error;
     }
+  },
+
+  getApplication: async () => {
+    try {
+      const { data } = await api.get('/driver/application');
+      return data;
+    } catch (error: unknown) {
+      const errObj = error as { response?: { status?: number } };
+      if (errObj.response?.status === 404) return null;
+      throw error;
+    }
+  },
+
+  submitApplication: async (formData: FormData) => {
+    const { data } = await api.post('/driver/application', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return data;
   },
 
   acceptRide: async (rideId: string) => {

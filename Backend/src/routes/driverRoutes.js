@@ -2,12 +2,39 @@ const express = require("express");
 const router = express.Router();
 const authMiddleware = require("../middlewares/authMiddleware");
 const roleMiddleware = require("../middlewares/roleMiddleware");
+const uploadDriverDocs = require("../middlewares/driverUploadMiddleware");
 const upload = require("../middlewares/uploadMiddleware");
-const { onboard, getStatus, toggleStatus, getEarnings } = require("../controllers/driverController");
-
+const {
+  submitApplication,
+  getApplication,
+  onboard,
+  getStatus,
+  toggleStatus,
+  getEarnings,
+} = require("../controllers/driverController");
 const verifyGuard = require("../middlewares/verifyGuard");
 
-// POST /api/driver/onboard — multipart with license + rc files
+const driverDocFields = uploadDriverDocs.fields([
+  { name: "profilePhoto", maxCount: 1 },
+  { name: "licenseFront", maxCount: 1 },
+  { name: "licenseBack", maxCount: 1 },
+  { name: "vehiclePhoto", maxCount: 1 },
+  { name: "rcBook", maxCount: 1 },
+  { name: "rc", maxCount: 1 },
+  { name: "license", maxCount: 1 },
+  { name: "insurance", maxCount: 1 },
+  { name: "pollutionCertificate", maxCount: 1 },
+  { name: "govtId", maxCount: 1 },
+  { name: "selfie", maxCount: 1 },
+]);
+
+// GET /api/driver/application — fetch driver application details
+router.get("/application", authMiddleware, getApplication);
+
+// POST /api/driver/application — submit / save driver application
+router.post("/application", authMiddleware, verifyGuard, driverDocFields, submitApplication);
+
+// POST /api/driver/onboard — legacy route
 router.post(
   "/onboard",
   authMiddleware,

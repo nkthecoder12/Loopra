@@ -2,15 +2,42 @@ const express = require("express");
 const router = express.Router();
 const authMiddleware = require("../middlewares/authMiddleware");
 const roleMiddleware = require("../middlewares/roleMiddleware");
-const { getUsers, getDrivers, approveDriver, rejectDriver, deactivateDriver } = require("../controllers/admin");
+const {
+  getUsers,
+  getDrivers,
+  getDriverApplications,
+  getDriverApplicationById,
+  verifyDocument,
+  approveDriverApplication,
+  rejectDriverApplication,
+  requestChangesDriverApplication,
+  updateDriverLifecycle,
+  approveDriver,
+  rejectDriver,
+  deactivateDriver,
+} = require("../controllers/admin");
 
-// All admin routes require AUTH + ADMIN role
+// All admin routes strictly require AUTH + ADMIN role
 router.use(authMiddleware, roleMiddleware("ADMIN"));
 
-router.get("/users", getUsers);                                   // Issue #15: GET /admin/users
-router.get("/drivers", getDrivers);                               // Issue #15: GET /admin/drivers (with populate)
-router.post("/drivers/:id/approve", approveDriver);               // Issue #15: approve driver
-router.post("/drivers/:id/reject", rejectDriver);                 // Issue #15: reject driver
-router.post("/deactivate-driver/:driverId", deactivateDriver);    // existing
+// Core Data Routes
+router.get("/users", getUsers);
+router.get("/drivers", getDrivers);
+
+// Driver Applications Module Routes
+router.get("/driver-applications", getDriverApplications);
+router.get("/driver-applications/:id", getDriverApplicationById);
+router.post("/driver-applications/:id/verify-document", verifyDocument);
+router.post("/driver-applications/:id/approve", approveDriverApplication);
+router.post("/driver-applications/:id/reject", rejectDriverApplication);
+router.post("/driver-applications/:id/request-changes", requestChangesDriverApplication);
+
+// Driver Lifecycle Route
+router.patch("/drivers/:id/lifecycle", updateDriverLifecycle);
+
+// Legacy routes for backward compatibility
+router.post("/drivers/:id/approve", approveDriver);
+router.post("/drivers/:id/reject", rejectDriver);
+router.post("/deactivate-driver/:driverId", deactivateDriver);
 
 module.exports = router;
