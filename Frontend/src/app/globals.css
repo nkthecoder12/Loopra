@@ -2,16 +2,18 @@
 @import "mapbox-gl/dist/mapbox-gl.css";
 
 @theme {
-  --color-primary: #000000;
-  --color-primary-brand: #112E81;
-  --color-secondary: #1F2937;
-  --color-accent: #2563EB;
-  --color-support: #CBD5E1;
+  --color-primary: #112E81;
+  --color-secondary: #4647AE;
+  --color-accent: #4382DF;
+  --color-soft-accent: #AACCD6;
   --color-background: #F8FAFC;
   --color-surface: #FFFFFF;
   --color-text-primary: #0F172A;
   --color-text-secondary: #64748B;
   --color-border: #E2E8F0;
+  --color-success: #22C55E;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
   
   --radius-premium: 16px;
   --radius-premium-lg: 24px;
@@ -44,7 +46,7 @@ html, body {
     font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
   }
 
-  h1, h2, h3, h4 {
+  h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-manrope), var(--font-inter), system-ui, sans-serif;
     letter-spacing: -0.02em;
   }
@@ -102,10 +104,10 @@ html, body {
   position: relative;
   width: 16px;
   height: 16px;
-  background-color: #2563EB;
+  background-color: #4382DF;
   border: 3px solid white;
   border-radius: 50%;
-  box-shadow: 0 0 10px rgba(37, 99, 235, 0.6);
+  box-shadow: 0 0 10px rgba(67, 130, 223, 0.6);
 }
 .user-pulse::after {
   content: "";
@@ -115,7 +117,7 @@ html, body {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  border: 2px solid #2563EB;
+  border: 2px solid #4382DF;
   animation: pulse-blue 2s infinite;
 }
 @keyframes pulse-blue {

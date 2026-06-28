@@ -23,7 +23,7 @@ export const Input: React.FC<InputProps> = ({ label, error, type = 'text', ...pr
           type={inputType}
           className={cn(
             "peer w-full rounded-premium border bg-surface px-4 pb-2 pt-6 text-sm font-semibold text-text-primary outline-none transition-all duration-[220ms] placeholder-transparent shadow-sm disabled:cursor-not-allowed disabled:bg-background disabled:text-text-secondary",
-            error ? "border-red-500 focus:border-red-500 focus:ring-4 focus:ring-red-500/10" : "border-border focus:border-accent focus:ring-4 focus:ring-accent/15"
+            error ? "border-danger focus:border-danger focus:ring-4 focus:ring-danger/10" : "border-border focus:border-accent focus:ring-4 focus:ring-accent/15"
           )}
           placeholder={label}
         />
@@ -42,7 +42,7 @@ export const Input: React.FC<InputProps> = ({ label, error, type = 'text', ...pr
           </button>
         )}
       </div>
-      {error && <p className="text-xs text-red-500 ml-1">{error}</p>}
+      {error && <p className="text-xs text-danger ml-1">{error}</p>}
     </div>
   );
 };

@@ -130,7 +130,7 @@ export default function AdminDashboard() {
             <p className="text-slate-500 font-medium text-xs sm:text-sm">Real-time mobility platform dashboard</p>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline" className="h-11 text-xs font-bold bg-white text-black border-slate-200 hover:bg-slate-50" onClick={fetchData}>
+            <Button variant="outline" className="h-11 text-xs font-bold bg-white text-black border-slate-200 hover:bg-slate-50" onClick={fetchData} loading={loading}>
               <RotateCcw size={16} className="mr-2" /> Refresh
             </Button>
             <Button className="h-11 text-xs font-bold bg-black text-white hover:bg-zinc-800">

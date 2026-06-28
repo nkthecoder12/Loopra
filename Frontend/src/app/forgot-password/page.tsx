@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { useNotificationStore } from "@/store/useNotificationStore";
 import api from "@/lib/api";
+import { Footer } from "@/components/Footer";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -38,56 +39,59 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-surface flex items-center justify-center p-4 sm:p-6">
-      <div className="max-w-md w-full bg-white rounded-[36px] p-8 sm:p-10 shadow-2xl border border-gray-100 space-y-6">
-        
-        {/* Header */}
-        <div className="space-y-2 text-center">
-          <div className="w-16 h-16 bg-primary/10 text-primary rounded-3xl flex items-center justify-center mx-auto shadow-inner mb-3">
-            <KeyRound size={32} />
-          </div>
-          <h1 className="text-3xl font-black text-primary tracking-tight">Forgot Password?</h1>
-          <p className="text-xs text-gray-500 font-medium">
-            Enter your email address and we will send you an OTP code to reset your account password.
-          </p>
-        </div>
-
-        {sent ? (
-          <div className="space-y-6 text-center py-4 animate-in fade-in duration-300">
-            <div className="p-4 bg-green-50 text-green-700 rounded-2xl flex items-center gap-3 text-xs font-bold text-left">
-              <CheckCircle2 size={24} className="shrink-0 text-green-600" />
-              <span>We have dispatched a 6-digit verification code to {email}.</span>
+    <div className="min-h-screen flex flex-col justify-between bg-background">
+      <div className="flex-grow flex items-center justify-center p-4 sm:p-6 lg:p-8">
+        <div className="max-w-md w-full bg-surface rounded-3xl p-8 sm:p-10 shadow-soft border border-border space-y-6 font-inter">
+          
+          {/* Header */}
+          <div className="space-y-2 text-center">
+            <div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto shadow-inner mb-3">
+              <KeyRound size={32} />
             </div>
-            <Button onClick={() => router.push("/otp")} className="w-full h-14 text-base">
-              Enter Verification OTP
-            </Button>
+            <h1 className="text-3xl font-black text-primary tracking-tight font-manrope">Forgot Password?</h1>
+            <p className="text-xs text-text-secondary font-medium">
+              Enter your email address and we will send you an OTP code to reset your account password.
+            </p>
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-1">
-              <Input
-                label="Registered Email Address"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="rider@example.com"
-                required
-              />
+
+          {sent ? (
+            <div className="space-y-6 text-center py-4 animate-in fade-in duration-300">
+              <div className="p-4 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-2xl flex items-center gap-3 text-xs font-bold text-left">
+                <CheckCircle2 size={24} className="shrink-0 text-success" />
+                <span>We have dispatched a 6-digit verification code to {email}.</span>
+              </div>
+              <Button onClick={() => router.push("/otp")} className="w-full h-14 text-base font-bold rounded-2xl">
+                Enter Verification OTP
+              </Button>
             </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-1">
+                <Input
+                  label="Registered Email Address"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="rider@example.com"
+                  required
+                />
+              </div>
 
-            <Button type="submit" loading={loading} disabled={loading} className="w-full h-14 text-base">
-              Send Reset Code
-            </Button>
-          </form>
-        )}
+              <Button type="submit" loading={loading} disabled={loading} className="w-full h-14 text-base font-bold rounded-2xl">
+                Send Reset Code
+              </Button>
+            </form>
+          )}
 
-        <div className="pt-2 text-center border-t">
-          <Link href="/login" className="inline-flex items-center gap-2 text-xs font-bold text-gray-500 hover:text-primary transition-colors">
-            <ArrowLeft size={14} /> Back to Sign In
-          </Link>
+          <div className="pt-2 text-center border-t border-border">
+            <Link href="/login" className="inline-flex items-center gap-2 text-xs font-bold text-text-secondary hover:text-primary transition-colors">
+              <ArrowLeft size={14} /> Back to Sign In
+            </Link>
+          </div>
+
         </div>
-
       </div>
+      <Footer />
     </div>
   );
 }
