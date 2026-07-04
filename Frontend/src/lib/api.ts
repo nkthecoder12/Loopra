@@ -30,16 +30,24 @@ api.interceptors.response.use(
     const status = error.response?.status;
     const message = error.response?.data?.message || error.message || 'Something went wrong';
 
+    const isMuted404Url =
+      status === 404 &&
+      (error.config?.url?.includes('/rides/active') ||
+       error.config?.url?.includes('/driver/status') ||
+       error.config?.url?.includes('/driver/application'));
+
     if (status === 401) {
       handleAutoLogout();
     } else if (status === 403) {
       window.location.href = '/dashboard';
     }
 
-    if (!status || status >= 400) {
-      useNotificationStore.getState().addNotification('error', message);
+    if (!isMuted404Url) {
+      if (!status || status >= 400) {
+        useNotificationStore.getState().addNotification('error', message);
+      }
+      console.error(`[API Error ${status || 'Network'}]:`, message);
     }
-    console.error(`[API Error ${status || 'Network'}]:`, message);
 
     return Promise.reject(error);
   }

@@ -31,9 +31,9 @@ export const SOCKET_URL = resolveUrl(
   "http://localhost:5000"
 );
 
-export const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
+export const MAPBOX_TOKEN = (process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "").trim();
 
-export const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "";
+export const RAZORPAY_KEY_ID = (process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "").trim();
 
 if (typeof window !== "undefined" && process.env.NODE_ENV === "production") {
   if (!API_BASE_URL.startsWith("https://")) {
