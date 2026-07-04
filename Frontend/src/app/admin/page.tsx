@@ -12,7 +12,6 @@ import {
   Eye,
   X,
   ShieldCheck,
-  AlertCircle,
   Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -147,7 +146,9 @@ export default function AdminDashboard() {
   }, [activeTab, page, statusFilter, searchQuery, addNotification]);
 
   useEffect(() => {
-    fetchData();
+    queueMicrotask(() => {
+      fetchData();
+    });
   }, [fetchData]);
 
   // Action Handlers

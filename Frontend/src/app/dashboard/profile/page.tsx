@@ -7,7 +7,7 @@ import { useNotificationStore } from '@/store/useNotificationStore';
 import { userService } from '@/services/user.service';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { Award, Calendar, CreditCard, ShieldCheck, Star, UserCheck, Wallet } from 'lucide-react';
+import { Award, Calendar, ShieldCheck, Star, UserCheck } from 'lucide-react';
 import { BecomeDriverCTA } from '@/components/BecomeDriverCTA';
 
 export default function ProfilePage() {
@@ -120,20 +120,6 @@ export default function ProfilePage() {
             <BecomeDriverCTA variant="card" />
           )}
 
-          {/* Wallet Card */}
-          <div className="bg-surface p-6 rounded-3xl border border-border shadow-soft space-y-4">
-            <div className="flex justify-between items-center text-text-secondary">
-              <span className="text-xs font-black uppercase tracking-widest font-manrope">Loopra Wallet</span>
-              <Wallet size={20} className="text-accent" />
-            </div>
-            <div>
-              <p className="text-3xl font-black text-primary font-manrope">₹1,250.00</p>
-              <p className="text-xs text-text-secondary mt-1">Available balance for rides</p>
-            </div>
-            <button className="w-full py-3 bg-primary/5 text-primary rounded-xl font-bold text-xs hover:bg-primary/10 transition-colors flex items-center justify-center gap-2 font-manrope touch-target">
-              <CreditCard size={15} /> Add Funds
-            </button>
-          </div>
 
           {/* Quick Metrics */}
           <div className="bg-surface p-6 rounded-3xl border border-border shadow-soft space-y-4">

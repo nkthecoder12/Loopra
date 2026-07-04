@@ -46,7 +46,7 @@ const DRAFT_STORAGE_KEY = "loopra_driver_onboarding_draft";
 
 export default function DriverOnboardingPage() {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, isHydrating } = useAuthStore();
   const { addNotification } = useNotificationStore();
 
   const [currentStep, setCurrentStep] = useState(1);
@@ -173,6 +173,17 @@ export default function DriverOnboardingPage() {
       checkExistingApplication();
     }
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!isHydrating) {
+      if (!isAuthenticated) {
+        addNotification("info", "Please login to continue your driver registration.");
+        router.replace("/login?redirect=/driver/onboarding");
+      } else if (user?.role === 'DRIVER') {
+        router.replace("/driver");
+      }
+    }
+  }, [isHydrating, isAuthenticated, user, router, addNotification]);
 
   // Save Draft to LocalStorage whenever form fields change
   useEffect(() => {

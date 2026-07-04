@@ -23,10 +23,7 @@ export function BecomeDriverCTA({
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     if (!isAuthenticated) {
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem('redirect_after_login', '/driver/onboarding');
-      }
-      router.push('/login?redirect=driver-onboarding');
+      router.push('/login?redirect=/driver/onboarding');
     } else {
       if (user?.role === 'DRIVER') {
         router.push('/driver');

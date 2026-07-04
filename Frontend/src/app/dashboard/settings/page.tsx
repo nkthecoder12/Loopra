@@ -43,26 +43,26 @@ export default function SettingsPage() {
       title: 'Account & Preferences',
       items: [
         { icon: User, title: 'Profile Information', desc: 'Manage your personal details and avatar', href: '/dashboard/profile' },
-        { icon: Bell, title: 'Notifications', desc: 'Configure ride alerts, emails, and SMS updates', href: '#' },
-        { icon: Sliders, title: 'Ride Preferences', desc: 'Set preferred vehicle type, quiet mode, and temperature', href: '#' },
-        { icon: CreditCard, title: 'Payments & Wallet', desc: 'Manage credit cards, UPI, and Loopra balance', href: '#' },
+        { icon: Bell, title: 'Notifications', desc: 'Configure ride alerts, emails, and SMS updates', href: '/dashboard/settings/notifications' },
+        { icon: Sliders, title: 'Ride Preferences', desc: 'Set preferred vehicle type, quiet mode, and temperature', href: '/dashboard/settings/preferences' },
+        { icon: CreditCard, title: 'Payments', desc: 'Manage credit cards, UPI, and payment methods', href: '/dashboard/settings/payments' },
       ]
     },
     {
       title: 'Privacy & Security',
       items: [
-        { icon: Shield, title: 'Privacy Settings', desc: 'Control location sharing and trip history visibility', href: '#' },
-        { icon: Lock, title: 'Security & Password', desc: 'Manage two-factor authentication and passwords', href: '#' },
+        { icon: Shield, title: 'Privacy Settings', desc: 'Control location sharing and trip history visibility', href: '/dashboard/settings/privacy' },
+        { icon: Lock, title: 'Security & Password', desc: 'Manage two-factor authentication and passwords', href: '/dashboard/settings/security' },
       ]
     },
     {
       title: 'App System',
       items: [
-        { icon: Palette, title: 'Appearance', desc: 'Light, Dark, and System contrast modes', href: '#' },
-        { icon: Globe, title: 'Language & Region', desc: 'English (US), Coimbatore Region (IN)', href: '#' },
-        { icon: HelpCircle, title: 'Help & Support', desc: '24/7 Rider helpline, FAQs, and dispute resolution', href: '#' },
-        { icon: FileText, title: 'Legal & Terms', desc: 'Terms of service, privacy policy, and driver terms', href: '#' },
-        { icon: Info, title: 'About Loopra', desc: 'Version 1.0.0 (Build 2026.06.27)', href: '#' },
+        { icon: Palette, title: 'Appearance', desc: 'Light, Dark, and System contrast modes', href: '/dashboard/settings/appearance' },
+        { icon: Globe, title: 'Language & Region', desc: 'English (US), Coimbatore Region (IN)', href: '/dashboard/settings/language' },
+        { icon: HelpCircle, title: 'Help & Support', desc: '24/7 Rider helpline, FAQs, and dispute resolution', href: '/dashboard/settings/help' },
+        { icon: FileText, title: 'Legal & Terms', desc: 'Terms of service, privacy policy, and driver terms', href: '/dashboard/settings/legal' },
+        { icon: Info, title: 'About Loopra', desc: 'Version 1.0.0 (Build 2026.06.27)', href: '/dashboard/settings/about' },
       ]
     }
   ];
@@ -94,10 +94,7 @@ export default function SettingsPage() {
                   <motion.div
                     key={itemIdx}
                     whileHover={{ backgroundColor: 'rgba(0,0,0,0.015)' }}
-                    onClick={() => {
-                      if (item.href !== '#') router.push(item.href);
-                      else addNotification('info', `${item.title} settings are configured for default Coimbatore region.`);
-                    }}
+                    onClick={() => router.push(item.href)}
                     className="p-5 flex items-center justify-between cursor-pointer transition-colors group"
                   >
                     <div className="flex items-center gap-4">

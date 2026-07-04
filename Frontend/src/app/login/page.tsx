@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -22,12 +22,24 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  const [redirectMsg, setRedirectMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const redirectParam = params.get('redirect');
+      if (redirectParam === '/driver/onboarding') {
+        queueMicrotask(() => setRedirectMsg('Please login to continue your driver registration.'));
+      }
+    }
+  }, []);
+
   const getRedirectTarget = (role: string) => {
     if (typeof window !== 'undefined') {
-      const redirectIntent = sessionStorage.getItem('redirect_after_login');
-      if (redirectIntent) {
-        sessionStorage.removeItem('redirect_after_login');
-        return redirectIntent;
+      const params = new URLSearchParams(window.location.search);
+      const redirectUrl = params.get('redirect');
+      if (redirectUrl) {
+        return redirectUrl;
       }
     }
     if (role === 'ADMIN') return '/admin';
@@ -128,6 +140,12 @@ export default function LoginPage() {
               <h2 className="text-3xl sm:text-4xl font-extrabold text-primary tracking-tight font-manrope">Welcome Back</h2>
               <p className="text-text-secondary text-sm sm:text-base font-medium">Sign in to your Loopra account to book your ride.</p>
             </div>
+
+            {redirectMsg && (
+              <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-2xl text-xs font-bold font-manrope animate-in fade-in slide-in-from-top-1">
+                {redirectMsg}
+              </div>
+            )}
 
             <form className="space-y-5" onSubmit={handleSubmit}>
               <div className="space-y-4">

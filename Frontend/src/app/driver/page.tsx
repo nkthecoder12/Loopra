@@ -375,15 +375,15 @@ export default function DriverDashboard() {
 
         {/* Rating screen after ride completes */}
         {showRatingScreen && activeRide ? (
-          <form onSubmit={handleRateUser} className="w-full max-w-md bg-white p-6 sm:p-8 rounded-3xl shadow-2xl space-y-6 border border-slate-100 z-10 animate-in zoom-in-95">
+          <form onSubmit={handleRateUser} className="w-full max-w-md bg-[#1c1c1e] p-6 sm:p-8 rounded-3xl shadow-2xl space-y-6 border border-zinc-800 z-10 animate-in zoom-in-95 text-white">
             <div className="text-center space-y-2">
-              <h2 className="text-2xl sm:text-3xl font-black text-black">Trip Completed!</h2>
-              <p className="text-slate-500 text-xs sm:text-sm font-medium">Rate passenger experience</p>
-              <h3 className="text-2xl font-black text-black mt-2">₹{activeRide.finalFare || activeRide.fare}</h3>
+              <h2 className="text-2xl sm:text-3xl font-black text-white">Trip Completed!</h2>
+              <p className="text-zinc-400 text-xs sm:text-sm font-semibold">Rate passenger experience</p>
+              <h3 className="text-3xl font-black text-white mt-2">₹{activeRide.finalFare || activeRide.fare}</h3>
             </div>
 
             <div className="space-y-2">
-              <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Passenger Rating</label>
+              <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 text-center">Passenger Rating</label>
               <div className="flex gap-2 justify-center">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
@@ -391,7 +391,7 @@ export default function DriverDashboard() {
                     type="button"
                     onClick={() => setUserRating(star)}
                     className={`w-10 h-10 text-xl rounded-xl transition-all touch-target ${
-                      userRating >= star ? 'bg-black text-white scale-110 shadow-md' : 'bg-slate-100 text-slate-400'
+                      userRating >= star ? 'bg-white text-black scale-110 shadow-md font-black' : 'bg-zinc-800 text-zinc-500 hover:bg-zinc-700'
                     }`}
                   >
                     ★
@@ -406,49 +406,49 @@ export default function DriverDashboard() {
                 onChange={(e) => setUserComment(e.target.value)}
                 placeholder="Optional passenger feedback..."
                 rows={3}
-                className="w-full p-3 border border-slate-200 rounded-xl outline-none focus:border-black transition-colors text-xs font-medium resize-none"
+                className="w-full p-3 bg-zinc-900 border border-zinc-800 rounded-xl outline-none focus:border-zinc-700 transition-colors text-xs font-semibold text-white resize-none placeholder:text-zinc-600"
               />
             </div>
 
             <div className="space-y-2 pt-2">
-              <button type="submit" className="w-full bg-black text-white py-3.5 rounded-xl font-bold shadow-lg hover:bg-zinc-800 transition-all touch-target text-sm">
+              <button type="submit" className="w-full bg-white text-black py-3.5 rounded-xl font-black shadow-lg hover:bg-zinc-150 transition-all touch-target text-sm">
                 Submit Review
               </button>
-              <button type="button" onClick={handleSkipRating} className="w-full text-slate-400 font-bold py-2 text-xs hover:text-slate-600">
+              <button type="button" onClick={handleSkipRating} className="w-full text-zinc-500 font-bold py-2 text-xs hover:text-zinc-300">
                 Skip
               </button>
             </div>
           </form>
         ) : activeRide ? (
           /* Ongoing active trip panel */
-          <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden relative z-10 animate-in slide-in-from-bottom duration-300">
+          <div className="w-full max-w-lg bg-[#1c1c1e] rounded-3xl shadow-2xl border border-zinc-800 overflow-hidden relative z-10 animate-in slide-in-from-bottom duration-300 text-white">
             <div className="p-6 sm:p-8 space-y-6">
-              <div className="flex justify-between items-center border-b border-slate-100 pb-4">
+              <div className="flex justify-between items-center border-b border-zinc-800 pb-4">
                 <div>
-                  <span className="bg-black text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
+                  <span className="bg-white text-black px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
                     Current Ride
                   </span>
-                  <p className="text-xs text-slate-400 mt-1 font-bold">Status: {activeRide.status}</p>
+                  <p className="text-xs text-zinc-400 mt-2 font-bold">Status: {activeRide.status}</p>
                 </div>
-                <h3 className="text-2xl font-black text-black">₹{activeRide.fare}</h3>
+                <h3 className="text-2xl font-black text-white">₹{activeRide.fare}</h3>
               </div>
 
               {/* Addresses */}
               <div className="space-y-3">
                 <div className="flex gap-3">
                   <div className="flex flex-col items-center py-1">
-                    <div className="w-3 h-3 rounded-full bg-black"></div>
-                    <div className="w-0.5 h-8 bg-slate-200"></div>
-                    <div className="w-3 h-3 bg-blue-600 rounded-sm"></div>
+                    <div className="w-3 h-3 rounded-full bg-white"></div>
+                    <div className="w-0.5 h-8 bg-zinc-800"></div>
+                    <div className="w-3 h-3 bg-blue-500 rounded-sm"></div>
                   </div>
                   <div className="flex-1 space-y-3">
                     <div>
-                      <p className="text-[10px] text-slate-400 font-black uppercase">Pickup Location</p>
-                      <p className="font-bold text-xs sm:text-sm text-black">{activeRide.pickupLocation?.address}</p>
+                      <p className="text-[10px] text-zinc-500 font-black uppercase">Pickup Location</p>
+                      <p className="font-bold text-xs sm:text-sm text-white">{activeRide.pickupLocation?.address}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-slate-400 font-black uppercase">Drop Location</p>
-                      <p className="font-bold text-xs sm:text-sm text-black">{activeRide.dropLocation?.address}</p>
+                      <p className="text-[10px] text-zinc-500 font-black uppercase">Drop Location</p>
+                      <p className="font-bold text-xs sm:text-sm text-white">{activeRide.dropLocation?.address}</p>
                     </div>
                   </div>
                 </div>
@@ -456,26 +456,26 @@ export default function DriverDashboard() {
 
               {/* Actions based on Status */}
               {activeRide.status === 'DRIVER_ASSIGNED' && (
-                <form onSubmit={handleStartRide} className="space-y-4 pt-4 border-t border-slate-100">
+                <form onSubmit={handleStartRide} className="space-y-4 pt-4 border-t border-zinc-800">
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400">Enter Rider OTP</label>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500">Enter Rider OTP</label>
                     <input
                       type="text"
                       maxLength={4}
                       value={otp}
                       onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
                       placeholder="4-digit OTP"
-                      className="w-full text-center tracking-widest text-2xl font-black h-14 border-2 border-slate-200 rounded-2xl outline-none focus:border-black transition-colors"
+                      className="w-full text-center tracking-widest text-2xl font-black h-14 border border-zinc-700 bg-zinc-900 rounded-2xl outline-none focus:border-zinc-650 transition-colors text-white placeholder:text-zinc-700"
                     />
                   </div>
-                  <Button type="submit" className="w-full h-14 bg-black text-white hover:bg-zinc-800 rounded-2xl font-bold text-base shadow-lg touch-target">
+                  <Button type="submit" className="w-full h-14 bg-white text-black hover:bg-zinc-100 rounded-2xl font-bold text-base shadow-lg touch-target">
                     Verify OTP & Start Trip
                   </Button>
                 </form>
               )}
 
               {activeRide.status === 'ONGOING' && (
-                <div className="pt-4 border-t border-slate-100">
+                <div className="pt-4 border-t border-zinc-800">
                   <Button onClick={handleCompleteRide} className="w-full h-14 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold text-base shadow-lg touch-target">
                     End & Complete Trip
                   </Button>
@@ -490,26 +490,26 @@ export default function DriverDashboard() {
               <div className="bg-emerald-500/20 text-emerald-400 px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest animate-pulse border border-emerald-500/30">
                 Incoming Offer
               </div>
-              <h2 className="text-4xl font-black text-white tracking-tight">₹{activeOffer.fare}</h2>
+              <h2 className="text-4xl font-black text-white tracking-tight font-manrope">₹{activeOffer.fare}</h2>
             </div>
 
-            <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100">
+            <div className="bg-[#1c1c1e] rounded-3xl shadow-2xl overflow-hidden border border-zinc-850 text-white">
               <div className="p-6 sm:p-8 space-y-6">
                 <div className="space-y-3">
                   <div className="flex gap-3">
                     <div className="flex flex-col items-center py-1">
-                      <div className="w-3 h-3 rounded-full bg-black"></div>
-                      <div className="w-0.5 h-10 bg-slate-200"></div>
-                      <div className="w-3 h-3 bg-black rounded-sm"></div>
+                      <div className="w-3 h-3 rounded-full bg-white"></div>
+                      <div className="w-0.5 h-10 bg-zinc-850"></div>
+                      <div className="w-3 h-3 bg-blue-500 rounded-sm"></div>
                     </div>
                     <div className="flex-1 space-y-3">
                       <div>
-                        <p className="text-[10px] text-slate-400 font-black uppercase">Pickup Address</p>
-                        <p className="font-bold text-xs sm:text-sm text-black">{activeOffer.pickup.address}</p>
+                        <p className="text-[10px] text-zinc-500 font-black uppercase">Pickup Address</p>
+                        <p className="font-bold text-xs sm:text-sm text-white">{activeOffer.pickup.address}</p>
                       </div>
                       <div>
-                        <p className="text-[10px] text-slate-400 font-black uppercase">Drop Address</p>
-                        <p className="font-bold text-xs sm:text-sm text-black">{activeOffer.drop.address}</p>
+                        <p className="text-[10px] text-zinc-500 font-black uppercase">Drop Address</p>
+                        <p className="font-bold text-xs sm:text-sm text-white">{activeOffer.drop.address}</p>
                       </div>
                     </div>
                   </div>
@@ -522,10 +522,10 @@ export default function DriverDashboard() {
                         Accept Both Rides (A + B)
                       </Button>
                       <div className="grid grid-cols-2 gap-3">
-                        <button onClick={handleReject} className="h-12 rounded-xl bg-slate-100 text-slate-600 font-bold text-xs hover:bg-slate-200 touch-target">
+                        <button onClick={handleReject} className="h-12 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold text-xs touch-target">
                           Reject All
                         </button>
-                        <button onClick={handleAcceptSingle} className="h-12 rounded-xl border-2 border-black text-black font-bold text-xs hover:bg-slate-50 touch-target">
+                        <button onClick={handleAcceptSingle} className="h-12 rounded-xl border border-zinc-700 text-white hover:bg-zinc-800 font-bold text-xs touch-target">
                           Accept Current Only
                         </button>
                       </div>
@@ -534,13 +534,13 @@ export default function DriverDashboard() {
                     <div className="grid grid-cols-2 gap-3">
                       <button 
                         onClick={handleReject}
-                        className="h-14 rounded-2xl bg-slate-100 text-slate-600 font-black uppercase text-xs tracking-wider hover:bg-slate-200 transition-all touch-target"
+                        className="h-14 rounded-2xl bg-zinc-800 text-zinc-400 font-black uppercase text-xs tracking-wider hover:bg-zinc-700 transition-all touch-target"
                       >
                         Decline
                       </button>
                       <Button 
                         onClick={handleAcceptSingle}
-                        className="h-14 rounded-2xl bg-black text-white hover:bg-zinc-800 font-black uppercase text-xs tracking-wider shadow-lg touch-target"
+                        className="h-14 rounded-2xl bg-white text-black hover:bg-zinc-150 font-black uppercase text-xs tracking-wider shadow-lg touch-target"
                       >
                         Accept Ride
                       </Button>

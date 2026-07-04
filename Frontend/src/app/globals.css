@@ -21,7 +21,36 @@
   --shadow-premium: 0 20px 40px -15px rgba(15, 23, 42, 0.12);
   --shadow-soft: 0 8px 30px rgba(15, 23, 42, 0.06);
   --shadow-glass: 0 20px 50px rgba(0, 0, 0, 0.15);
+
+  /* Premium Dark Mode Theme Variables */
+  --color-dark-panel-bg: #1c1c1e;
+  --color-dark-card-bg: #2c2c2e;
+  --color-dark-input-bg: #3a3a3c;
+  --color-dark-green-bg: #0f3d24;
+  --color-dark-green-text: #34c759;
+  --color-dark-blue-bg: #09203f;
+  --color-dark-blue-text: #30a3ff;
+  --color-dark-border: #3a3a3c;
+
+  /* Custom Radar Keyframes */
+  --animate-radar-slow: radar 4s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
+  --animate-radar-fast: radar 2s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
 }
+
+@keyframes radar {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.3;
+  }
+  100% {
+    transform: scale(2.8);
+    opacity: 0;
+  }
+}
+
 
 :root {
   --background: #F8FAFC;
