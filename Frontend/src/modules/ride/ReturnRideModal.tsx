@@ -1,17 +1,19 @@
 "use client";
 
 import React from 'react';
-import { RotateCcw, Clock, ShieldCheck, CreditCard, X } from 'lucide-react';
+import { RotateCcw, ShieldCheck, CreditCard, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 interface ReturnRideModalProps {
-  onConfirm: () => void;
+  onConfirm: (scheduledAt: string) => void;
   onClose: () => void;
   pickup: string;
   drop: string;
 }
 
 export const ReturnRideModal = ({ onConfirm, onClose, pickup, drop }: ReturnRideModalProps) => {
+  const [returnDate, setReturnDate] = React.useState('');
+  const [returnTime, setReturnTime] = React.useState('');
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-primary/60 backdrop-blur-sm animate-in fade-in duration-300">
       <div className="w-full max-w-xl bg-surface rounded-t-[32px] sm:rounded-3xl shadow-premium overflow-hidden animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-300 max-h-[90vh] flex flex-col font-inter">
@@ -54,13 +56,19 @@ export const ReturnRideModal = ({ onConfirm, onClose, pickup, drop }: ReturnRide
             <div className="space-y-3">
               <h3 className="text-[10px] font-black uppercase tracking-widest text-text-secondary font-manrope">Scheduled Time</h3>
               <div className="space-y-2">
-                <div className="p-3 bg-background border border-border rounded-2xl flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <Clock size={16} className="text-primary" />
-                    <span className="font-bold text-xs text-text-primary">In 2 hours (Automated)</span>
-                  </div>
-                  <div className="w-2 h-2 bg-success rounded-full animate-pulse"></div>
-                </div>
+                <input
+                  type="date"
+                  min={new Date().toISOString().split('T')[0]}
+                  value={returnDate}
+                  onChange={(e) => setReturnDate(e.target.value)}
+                  className="w-full rounded-xl border border-border bg-background p-3 text-xs font-bold text-text-primary outline-none focus:border-primary touch-target"
+                />
+                <input
+                  type="time"
+                  value={returnTime}
+                  onChange={(e) => setReturnTime(e.target.value)}
+                  className="w-full rounded-xl border border-border bg-background p-3 text-xs font-bold text-text-primary outline-none focus:border-primary touch-target"
+                />
               </div>
             </div>
           </div>
@@ -83,7 +91,12 @@ export const ReturnRideModal = ({ onConfirm, onClose, pickup, drop }: ReturnRide
             <Button variant="outline" onClick={onClose} className="w-full sm:w-1/3 h-12 text-sm font-bold rounded-xl touch-target">
               Maybe later
             </Button>
-            <Button variant="primary" onClick={onConfirm} className="w-full sm:w-2/3 h-12 text-sm font-bold rounded-xl shadow-md touch-target">
+            <Button
+              variant="primary"
+              onClick={() => onConfirm(`${returnDate}T${returnTime}:00`)}
+              disabled={!returnDate || !returnTime}
+              className="w-full sm:w-2/3 h-12 text-sm font-bold rounded-xl shadow-md touch-target"
+            >
               Confirm Return (₹170 Advance)
             </Button>
           </div>

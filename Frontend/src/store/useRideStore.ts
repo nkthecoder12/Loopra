@@ -15,6 +15,7 @@ export interface DriverInfo {
   vehicleDetails: string;
   vehicle?: string | { type: string; number: string };
   location?: { lat: number; lng: number };
+  rating?: number;
 }
 
 export interface RideInfo {

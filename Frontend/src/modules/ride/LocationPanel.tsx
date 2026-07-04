@@ -93,9 +93,9 @@ export const LocationPanel = ({
       return;
     }
 
-    if (isScheduled) {
+    if (isScheduled || lockReturn) {
       if (!scheduledDate || !scheduledTime) {
-        addNotification("error", "Please select both a date and a time for scheduling.");
+        addNotification("error", "Please select both a date and a time.");
         return;
       }
       
@@ -111,7 +111,7 @@ export const LocationPanel = ({
     onSearch(
       pickupLocation,
       dropLocation,
-      isScheduled && scheduledDate && scheduledTime ? { date: scheduledDate, time: scheduledTime } : undefined,
+      (isScheduled || lockReturn) && scheduledDate && scheduledTime ? { date: scheduledDate, time: scheduledTime } : undefined,
       lockReturn
     );
   };
@@ -197,7 +197,15 @@ export const LocationPanel = ({
               <input
                 type="checkbox"
                 checked={lockReturn}
-                onChange={(e) => setLockReturn(e.target.checked)}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setLockReturn(checked);
+                  if (checked) {
+                    setIsScheduled(true);
+                  } else {
+                    setIsScheduled(false);
+                  }
+                }}
                 className="sr-only peer"
               />
               <div className="relative w-11 h-6 bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
@@ -208,7 +216,10 @@ export const LocationPanel = ({
         {lockReturn && (
           <div className="text-center pt-1 animate-in fade-in duration-200">
             <button
-              onClick={() => setLockReturn(false)}
+              onClick={() => {
+                setLockReturn(false);
+                setIsScheduled(false);
+              }}
               className="text-[11px] font-bold text-zinc-400 underline hover:text-zinc-200"
             >
               {"I'll book the return trip separately later"}
@@ -216,23 +227,25 @@ export const LocationPanel = ({
           </div>
         )}
 
-        {/* Mode Switcher: Pickup Now / Schedule */}
-        <div className="grid grid-cols-2 gap-2 rounded-2xl bg-zinc-800 p-1">
-          <button
-            onClick={() => setIsScheduled(false)}
-            className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-black transition-all touch-target ${!isScheduled ? "bg-white text-black shadow-md" : "text-zinc-400 hover:text-white"}`}
-          >
-            <Clock size={14} />
-            Pickup Now
-          </button>
-          <button
-            onClick={() => setIsScheduled(true)}
-            className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-black transition-all touch-target ${isScheduled ? "bg-white text-black shadow-md" : "text-zinc-400 hover:text-white"}`}
-          >
-            <Calendar size={14} />
-            Schedule
-          </button>
-        </div>
+        {/* Mode Switcher */}
+        {!lockReturn && (
+          <div className="grid grid-cols-2 gap-2 rounded-2xl bg-zinc-800 p-1">
+            <button
+              onClick={() => setIsScheduled(false)}
+              className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-black transition-all touch-target ${!isScheduled ? "bg-white text-black shadow-md" : "text-zinc-400 hover:text-white"}`}
+            >
+              <Clock size={14} />
+              Pickup Now
+            </button>
+            <button
+              onClick={() => setIsScheduled(true)}
+              className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-black transition-all touch-target ${isScheduled ? "bg-white text-black shadow-md" : "text-zinc-400 hover:text-white"}`}
+            >
+              <Calendar size={14} />
+              Schedule
+            </button>
+          </div>
+        )}
 
         {/* Schedule Inputs */}
         <AnimatePresence>
@@ -242,26 +255,31 @@ export const LocationPanel = ({
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="grid grid-cols-2 gap-3 overflow-hidden"
+              className="space-y-2"
             >
-              <input
-                type="date"
-                min={getMinDateString()}
-                value={scheduledDate}
-                onChange={(e) => setScheduledDate(e.target.value)}
-                className="rounded-xl border border-zinc-700 bg-zinc-800 p-3.5 text-xs font-bold text-white outline-none focus:border-blue-500 touch-target"
-              />
-              <input
-                type="time"
-                value={scheduledTime}
-                onChange={(e) => setScheduledTime(e.target.value)}
-                className="rounded-xl border border-zinc-700 bg-zinc-800 p-3.5 text-xs font-bold text-white outline-none focus:border-blue-500 touch-target"
-              />
+              {lockReturn && (
+                <p className="text-[10px] font-black uppercase text-blue-400 tracking-wider">Select return ride departure time:</p>
+              )}
+              <div className="grid grid-cols-2 gap-3 overflow-hidden">
+                <input
+                  type="date"
+                  min={getMinDateString()}
+                  value={scheduledDate}
+                  onChange={(e) => setScheduledDate(e.target.value)}
+                  className="rounded-xl border border-zinc-700 bg-zinc-800 p-3.5 text-xs font-bold text-white outline-none focus:border-blue-500 touch-target w-full"
+                />
+                <input
+                  type="time"
+                  value={scheduledTime}
+                  onChange={(e) => setScheduledTime(e.target.value)}
+                  className="rounded-xl border border-zinc-700 bg-zinc-800 p-3.5 text-xs font-bold text-white outline-none focus:border-blue-500 touch-target w-full"
+                />
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Estimated Fare Row (from mockup) & Proceed Button */}
+        {/* Estimated Fare Row & Proceed Button */}
         <div className="pt-2 border-t border-zinc-800 space-y-4">
           {pickupLocation && dropLocation && (
             <div className="flex items-center justify-between">
@@ -274,7 +292,7 @@ export const LocationPanel = ({
 
           <Button
             onClick={handleProceed}
-            disabled={!pickupLocation || !dropLocation}
+            disabled={!pickupLocation || !dropLocation || (lockReturn && (!scheduledDate || !scheduledTime))}
             className="group w-full h-14 bg-white text-black hover:bg-zinc-100 disabled:bg-zinc-800 disabled:text-zinc-650 rounded-2xl font-black text-base shadow-lg touch-target transition-all active:scale-[0.99]"
           >
             See Prices

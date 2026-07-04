@@ -214,14 +214,15 @@ export default function DashboardPage() {
     if (!pickupLocation || !dropLocation) return;
     setLoading(true);
     try {
-      const scheduledAt = scheduleData ? `${scheduleData.date}T${scheduleData.time}:00` : undefined;
+      const scheduledAt = (scheduleData && !lockReturnSelected) ? `${scheduleData.date}T${scheduleData.time}:00` : undefined;
+      const outboundType = (scheduleData && !lockReturnSelected) ? 'SCHEDULED' : 'INSTANT';
       
       // 1. Create Outbound Ride A
       const newRide = await rideService.createRide({
         pickupLocation,
         dropLocation,
         vehicleType: vehicle.id,
-        type: scheduleData ? 'SCHEDULED' : 'INSTANT',
+        type: outboundType,
         scheduledAt
       });
       
@@ -234,7 +235,7 @@ export default function DashboardPage() {
       addNotification('success', 'Ride booked successfully! Finding driver...');
 
       // 2. If return ride is locked in, trigger return booking & advance fee payment
-      if (lockReturnSelected) {
+      if (lockReturnSelected && scheduleData) {
         try {
           addNotification('info', 'Initializing advance payment for your locked return ride...');
           const orderData = await rideService.createAdvancePaymentOrder(newRide.rideId);
@@ -258,11 +259,12 @@ export default function DashboardPage() {
                 });
                 
                 // Book return ride B
+                const returnScheduledAt = `${scheduleData.date}T${scheduleData.time}:00`;
                 await rideService.bookAdvanceRide({
                   rideAId: newRide.rideId,
                   pickupLocation: dropLocation as unknown as Record<string, unknown>,
                   dropLocation: pickupLocation as unknown as Record<string, unknown>,
-                  scheduledAt: new Date(Date.now() + 1000 * 60 * 60 * 2).toISOString() // 2 hours later
+                  scheduledAt: new Date(returnScheduledAt).toISOString()
                 });
                 
                 addNotification('success', 'Return ride locked in successfully!');
@@ -368,7 +370,7 @@ export default function DashboardPage() {
     }
   };
 
-  const handleBookReturnRide = async () => {
+  const handleBookReturnRide = async (returnScheduledAt: string) => {
     if (!activeRide) return;
     try {
       setLoading(true);
@@ -397,7 +399,7 @@ export default function DashboardPage() {
                   rideAId: currentRideId,
                   pickupLocation: activeRide.dropLocation as unknown as Record<string, unknown>,
                   dropLocation: activeRide.pickupLocation as unknown as Record<string, unknown>,
-                  scheduledAt: new Date(Date.now() + 1000 * 60 * 60 * 2).toISOString() 
+                  scheduledAt: new Date(returnScheduledAt).toISOString()
                });
              }
              
@@ -515,30 +517,15 @@ export default function DashboardPage() {
                         <RotateCw size={14} className="animate-spin-slow" />
                         <span className="font-bold text-xs">Return ride locked in</span>
                       </div>
-                      <span className="text-[11px] font-bold text-blue-300">2 hours • 12:30 PM</span>
+                      <span className="text-[11px] font-bold text-blue-300">
+                        {scheduleData ? `${scheduleData.date} • ${scheduleData.time}` : ''}
+                      </span>
                     </div>
                     <p className="text-[10px] text-blue-200/90 font-medium">
-                      {"🔔 We'll check in at 11:30 AM. Plans change, just tap to reschedule."}
+                      {"🔔 We'll check in prior to departure. Plans change, just tap to reschedule."}
                     </p>
                   </div>
                 )}
-
-                {/* Driver box */}
-                <div className="space-y-2">
-                  <p className="text-[9px] font-black uppercase text-zinc-500 tracking-wider">Your Driver, both ways</p>
-                  <div className="flex items-center gap-4 bg-[#252528] p-4 rounded-2xl border border-zinc-800/80">
-                    <div className="w-11 h-11 bg-blue-900/80 text-blue-400 rounded-full flex items-center justify-center font-black text-sm shrink-0">
-                      RK
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-extrabold text-sm text-white">Rajesh Kumar</p>
-                      <p className="text-xs text-zinc-400 font-semibold truncate">Dzire • TN 38 BX 4521</p>
-                    </div>
-                    <div className="flex items-center gap-1 bg-zinc-900 px-2.5 py-1 rounded-xl text-amber-400 text-xs font-bold">
-                      ★ 4.9
-                    </div>
-                  </div>
-                </div>
 
                 {/* Fare breakdown */}
                 <div className="space-y-2">
@@ -759,6 +746,9 @@ export default function DashboardPage() {
                           {activeRide.driver.vehicleDetails || (activeRide.driver.vehicle ? (typeof activeRide.driver.vehicle === 'object' ? `${activeRide.driver.vehicle.type} (${activeRide.driver.vehicle.number})` : activeRide.driver.vehicle) : '')}
                         </p>
                         <p className="text-xs text-zinc-400 mt-0.5 font-mono font-semibold">{activeRide.driver.phone}</p>
+                      </div>
+                      <div className="flex items-center gap-1 bg-zinc-900 px-2 py-1 rounded-xl text-amber-400 text-xs font-bold shrink-0">
+                        ★ {activeRide.driver.rating || 4.9}
                       </div>
                     </div>
                   )}
