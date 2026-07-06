@@ -1,6 +1,7 @@
 const rideService = require("../services/rideService");
 const Ride = require("../models/Ride");
 const Driver = require("../models/Driver");
+const notificationEventBus = require("../services/notificationEventBus");
 const { RIDE_STATUS } = require("../utils/constants");
 const { enforceStatusTransition } = require("../utils/rideStateMachine");
 const { calculateDistance } = require("../utils/helpers");
@@ -170,6 +171,17 @@ const acceptRide = async (req, res, next) => {
     // Mark driver as busy and link current ride
     await Driver.findByIdAndUpdate(driver._id, { isAvailable: false, currentRideId: ride._id });
 
+    // Emit domain event for ride assignment
+    notificationEventBus.emit("ride.assigned", {
+      riderUserId: ride.userId,
+      data: {
+        rideId: ride._id,
+        driverName: driver.name,
+        vehicleType: driver.vehicle.type,
+        vehicleNumber: driver.vehicle.number,
+      },
+    });
+
     if (io) {
       io.to(`ride_${ride._id.toString()}`).emit("ride-status-updated", {
         rideId: ride._id,
@@ -291,6 +303,12 @@ const startRide = async (req, res, next) => {
     ride.startedAt = new Date();
     await ride.save();
 
+    // Emit domain event for ride start
+    notificationEventBus.emit("ride.started", {
+      riderUserId: ride.userId,
+      data: { rideId: ride._id },
+    });
+
     if (io) {
       io.to(`ride_${ride._id.toString()}`).emit("ride-status-updated", {
         rideId: ride._id,
@@ -341,6 +359,12 @@ const completeRide = async (req, res, next) => {
     ride.completedAt = endTime;
     ride.finalFare = finalFare;
     await ride.save();
+
+    // Emit domain event for ride completion
+    notificationEventBus.emit("ride.completed", {
+      riderUserId: ride.userId,
+      data: { rideId: ride._id, fare: finalFare },
+    });
 
     const driver = await Driver.findById(ride.driverId);
     if (driver) {
@@ -403,6 +427,23 @@ const cancelRide = async (req, res, next) => {
     ride.cancelledBy = req.user.role;
     ride.cancellationReason = req.body.reason || null;
     await ride.save();
+
+    // Emit domain event for ride cancelled to rider
+    notificationEventBus.emit("ride.cancelled", {
+      userId: ride.userId,
+      data: { rideId: ride._id, reason: ride.cancellationReason || "Cancelled" },
+    });
+
+    if (ride.driverId) {
+      const driver = await Driver.findById(ride.driverId);
+      if (driver) {
+        // Emit domain event for ride cancelled to driver
+        notificationEventBus.emit("ride.cancelled", {
+          userId: driver.userId,
+          data: { rideId: ride._id, reason: ride.cancellationReason || "Cancelled" },
+        });
+      }
+    }
 
     const io = req.app.get("io");
     if (io) {

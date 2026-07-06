@@ -1,6 +1,7 @@
 const Ride = require("../models/Ride");
 const Payment = require("../models/payment");
 const mongoose = require("mongoose");
+const notificationEventBus = require("../services/notificationEventBus");
 const {
   createRazorpayOrder,
   verifyRazorpaySignature,
@@ -199,6 +200,15 @@ const verifyPayment = async (req, res) => {
       await session.commitTransaction();
     }
     session.endSession();
+
+    // Emit domain event for payment success
+    notificationEventBus.emit("payment.success", {
+      riderUserId: payment.userId,
+      data: {
+        rideId: payment.rideId,
+        amount: payment.amount,
+      },
+    });
 
     // Notify via socket
     const io = req.app.get("io");

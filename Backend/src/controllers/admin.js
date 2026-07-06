@@ -2,7 +2,7 @@ const Driver = require("../models/Driver");
 const DriverApplication = require("../models/DriverApplication");
 const AdminAuditLog = require("../models/AdminAuditLog");
 const User = require("../models/User");
-const NotificationService = require("../services/notificationService");
+const notificationEventBus = require("../services/notificationEventBus");
 
 // ─── GET USERS (paginated) ────────────────────────────────────────────────────
 const getUsers = async (req, res) => {
@@ -227,12 +227,12 @@ const approveDriverApplication = async (req, res) => {
       action: "APPROVE_APPLICATION",
     });
 
-    // Notify driver
-    if (application.userId && application.userId.email) {
-      NotificationService.notifyDriverOnboarding(application.userId.email, "APPROVED").catch((err) => {
-        console.error("[AdminController] Approval email failed:", err.message);
-      });
-    }
+    // Emit domain event for driver approval
+    const driverUserId = application.userId._id || application.userId;
+    notificationEventBus.emit("driver.approved", {
+      driverUserId,
+      data: { name: application.personalDetails.fullName },
+    });
 
     return res.status(200).json({ success: true, message: "Driver application approved successfully", application, driver });
   } catch (error) {
@@ -277,11 +277,12 @@ const rejectDriverApplication = async (req, res) => {
       reason,
     });
 
-    if (application.userId && application.userId.email) {
-      NotificationService.notifyDriverOnboarding(application.userId.email, "REJECTED", reason).catch((err) => {
-        console.error("[AdminController] Rejection notification failed:", err.message);
-      });
-    }
+    // Emit domain event for driver rejection
+    const driverUserId = application.userId._id || application.userId;
+    notificationEventBus.emit("driver.rejected", {
+      driverUserId,
+      data: { reason },
+    });
 
     return res.status(200).json({ success: true, message: "Driver application rejected", application });
   } catch (error) {

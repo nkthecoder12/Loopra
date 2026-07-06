@@ -8,6 +8,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useAuthStore } from '@/store/useAuthStore';
 import { cn } from '@/lib/utils';
+import { NotificationCenter } from '@/components/NotificationCenter';
+import { FirebaseNotificationManager } from '@/components/FirebaseNotificationManager';
 
 const navItems = [
   { href: '/dashboard', label: 'Ride', icon: Navigation },
@@ -33,6 +35,14 @@ export default function DashboardLayout({
   return (
     <ProtectedRoute allowedRoles={['USER']}>
       <div className="flex h-screen w-full flex-col overflow-hidden bg-background md:flex-row relative">
+        {/* Firebase messaging registration manager */}
+        <FirebaseNotificationManager />
+
+        {/* Floating Notification Center Bell */}
+        <div className="fixed top-4 right-4 z-40">
+          <NotificationCenter />
+        </div>
+
         {/* Main Content Area */}
         <main className="order-1 flex flex-1 overflow-hidden h-full w-full">
           {children}
