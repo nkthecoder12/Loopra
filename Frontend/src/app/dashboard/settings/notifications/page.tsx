@@ -6,7 +6,15 @@ import { Bell, ArrowLeft, Loader, Shield, Sparkles } from "lucide-react";
 import { notificationService, NotificationPreferences, ChannelPreference } from "@/services/notification.service";
 import { useNotificationStore } from "@/store/useNotificationStore";
 
-const categories = [
+type CategoryKey = keyof Omit<NotificationPreferences, "userId" | "createdAt" | "updatedAt">;
+
+interface CategorySetting {
+  key: CategoryKey;
+  label: string;
+  desc: string;
+}
+
+const categories: CategorySetting[] = [
   { key: "RIDE", label: "Ride Alerts", desc: "Driver assignment, arrival, and dispatch updates" },
   { key: "PAYMENT", label: "Billing & Payments", desc: "Receipts, payment failures, and refund alerts" },
   { key: "DRIVER", label: "Driver Partner Program", desc: "Onboarding reviews, license alerts, and compliance updates" },
@@ -41,7 +49,7 @@ export default function NotificationsSettingsPage() {
     fetchPrefs();
   }, [addNotification]);
 
-  type CategoryKey = keyof Omit<NotificationPreferences, "userId" | "createdAt" | "updatedAt">;
+
 
   const handleToggle = async (catKey: CategoryKey, channel: keyof ChannelPreference) => {
     if (!preferences) return;
@@ -147,7 +155,7 @@ export default function NotificationsSettingsPage() {
               {/* Preferences rows */}
               <div className="divide-y divide-border">
                 {categories.map((cat) => {
-                  const pref = preferences[cat.key] || {
+                  const pref = (preferences ? preferences[cat.key] : null) || {
                     inApp: true,
                     push: true,
                     email: true,
