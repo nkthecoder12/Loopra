@@ -207,6 +207,8 @@ const approveDriverApplication = async (req, res) => {
     } else {
       driver.onboardingStatus = "APPROVED";
       driver.isActive = true;
+      driver.isDeleted = false;
+      driver.deletedAt = null;
       driver.name = application.personalDetails.fullName;
       driver.phone = application.personalDetails.phone;
       driver.vehicle = {

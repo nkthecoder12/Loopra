@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Driver = require("../models/Driver");
 const DriverApplication = require("../models/DriverApplication");
 const Ride = require("../models/Ride");
@@ -173,6 +174,8 @@ const submitApplication = async (req, res, next) => {
       });
     } else {
       driver.onboardingStatus = "PENDING";
+      driver.isDeleted = false;
+      driver.deletedAt = null;
       await driver.save();
     }
 
@@ -210,25 +213,100 @@ const onboard = async (req, res, next) => {
   return submitApplication(req, res, next);
 };
 
+// Helper function to audit and ensure driver profile document exists
+const ensureDriverProfile = async (userId) => {
+  console.log(`[Driver Audit] Auditing Driver profile existence for userId=${userId}`);
+  let driver = await Driver.findOne({ userId, isDeleted: false });
+  
+  if (driver) {
+    console.log(`[Driver Audit] Driver profile found: ID=${driver._id}, status=${driver.onboardingStatus}`);
+    return driver;
+  }
+
+  // Look for any driver profile even if soft-deleted
+  const deletedDriver = await Driver.findOne({ userId, isDeleted: true });
+  if (deletedDriver) {
+    console.log(`[Driver Audit] Soft-deleted Driver profile found: ID=${deletedDriver._id}. Restoring it...`);
+    deletedDriver.isDeleted = false;
+    deletedDriver.deletedAt = null;
+    deletedDriver.onboardingStatus = "APPROVED";
+    await deletedDriver.save();
+    return deletedDriver;
+  }
+
+  // Look for an approved application
+  console.log(`[Driver Audit] Driver profile missing. Checking approved DriverApplication for userId=${userId}`);
+  const application = await DriverApplication.findOne({ userId, status: "APPROVED" });
+  if (application) {
+    console.log(`[Driver Audit] Approved DriverApplication found (ID=${application._id}). Auto-recreating Driver profile...`);
+    driver = await Driver.create({
+      userId,
+      name: application.personalDetails?.fullName || "Driver",
+      phone: application.personalDetails?.phone || "0000000000",
+      vehicle: {
+        type: application.vehicleDetails?.vehicleType || "car",
+        number: application.vehicleDetails?.number || "UNKNOWN",
+      },
+      onboardingStatus: "APPROVED",
+      isActive: true,
+      documents: {
+        license: application.licenseDetails?.licenseFront?.url || null,
+        rc: application.documents?.rcBook?.url || null,
+      },
+    });
+    console.log(`[Driver Audit] Driver profile successfully recreated: ID=${driver._id}`);
+    return driver;
+  }
+
+  console.warn(`[Driver Audit] Driver profile missing and no approved DriverApplication exists for userId=${userId}`);
+  return null;
+};
+
 // ─── GET STATUS ───────────────────────────────────────────────────────────────
 const getStatus = async (req, res, next) => {
-  try {
-    const driver = await Driver.findOne({ userId: req.user.id, isDeleted: false });
-    const application = await DriverApplication.findOne({ userId: req.user.id });
+  const userId = req.user?.id;
+  const role = req.user?.role;
+  const dbName = mongoose.connection.name;
 
-    if (!driver && !application) {
-      return res.status(404).json({ success: false, message: "Driver profile not found", onboardingStatus: null });
+  console.log(`[Driver GetStatus] Route matched: GET /api/driver/status | User=${userId} | Role=${role} | DB=${dbName}`);
+
+  try {
+    // 1. Audit and ensure driver profile document exists if user role is DRIVER
+    let driver = null;
+    if (role === "DRIVER") {
+      driver = await ensureDriverProfile(userId);
+    } else {
+      driver = await Driver.findOne({ userId, isDeleted: false });
     }
 
-    return res.status(200).json({
+    // 2. Fetch DriverApplication status
+    console.log(`[Driver GetStatus] Querying DriverApplication collection for userId=${userId}`);
+    const application = await DriverApplication.findOne({ userId });
+    console.log(`[Driver GetStatus] Application query result:`, application ? { id: application._id, status: application.status } : "NULL");
+
+    if (!driver && !application) {
+      console.warn(`[Driver GetStatus] 404: Neither Driver nor DriverApplication found for userId=${userId}`);
+      return res.status(404).json({
+        success: false,
+        code: "DRIVER_PROFILE_MISSING",
+        message: "Driver profile not found.",
+        onboardingStatus: null
+      });
+    }
+
+    const responseData = {
       success: true,
       onboardingStatus: driver?.onboardingStatus || application?.status || "PENDING",
       isAvailable: driver?.isAvailable || false,
       isActive: driver?.isActive ?? true,
       currentRideId: driver?.currentRideId || null,
       application,
-    });
+    };
+
+    console.log(`[Driver GetStatus] Responding 200: onboardingStatus=${responseData.onboardingStatus}, isAvailable=${responseData.isAvailable}`);
+    return res.status(200).json(responseData);
   } catch (err) {
+    console.error(`[Driver GetStatus] FAILED for userId=${userId}:`, err);
     next(err);
   }
 };
@@ -238,27 +316,32 @@ const toggleStatus = async (req, res, next) => {
   const userId = req.user?.id;
   const role = req.user?.role;
   const { isOnline } = req.body;
+  const dbName = mongoose.connection.name;
 
-  console.log(`[Driver ToggleStatus] Incoming request: User=${userId}, Role=${role}, Body=`, req.body);
+  console.log(`[Driver ToggleStatus] Route matched: PATCH /api/driver/status | User=${userId} | Role=${role} | Body=`, req.body);
 
   try {
     if (typeof isOnline !== "boolean") {
-      console.warn(`[Driver ToggleStatus] Bad Request: isOnline is not a boolean (${typeof isOnline})`);
+      console.warn(`[Driver ToggleStatus] 400 Bad Request: isOnline is not a boolean (${typeof isOnline})`);
       return res.status(400).json({ success: false, message: "isOnline must be a boolean" });
     }
 
-    console.log(`[Driver ToggleStatus] Querying Driver document for userId=${userId}`);
-    const driver = await Driver.findOne({ userId, isDeleted: false });
+    // 1. Audit and ensure driver profile document exists
+    let driver = await ensureDriverProfile(userId);
     
     if (!driver) {
-      console.warn(`[Driver ToggleStatus] Driver profile not found for userId=${userId}`);
-      return res.status(404).json({ success: false, message: "Driver profile not found" });
+      console.warn(`[Driver ToggleStatus] 404: Driver profile missing and cannot be recreated for userId=${userId}`);
+      return res.status(404).json({
+        success: false,
+        code: "DRIVER_PROFILE_MISSING",
+        message: "Driver profile not found."
+      });
     }
 
     console.log(`[Driver ToggleStatus] Found Driver profile ID=${driver._id}, onboardingStatus=${driver.onboardingStatus}`);
 
     if (driver.onboardingStatus !== "APPROVED") {
-      console.warn(`[Driver ToggleStatus] Blocked: Driver is not approved (status=${driver.onboardingStatus})`);
+      console.warn(`[Driver ToggleStatus] 403 Forbidden: Driver is not approved (status=${driver.onboardingStatus})`);
       return res.status(403).json({ success: false, message: "Driver not approved yet. Please wait for admin approval." });
     }
 
@@ -275,7 +358,7 @@ const toggleStatus = async (req, res, next) => {
       isAvailable: driver.isAvailable,
     });
   } catch (err) {
-    console.error(`[Driver ToggleStatus] FAILED to toggle availability status for userId=${userId}:`, err);
+    console.error(`[Driver ToggleStatus] FAILED for userId=${userId}:`, err);
     next(err);
   }
 };
