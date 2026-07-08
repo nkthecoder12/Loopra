@@ -69,7 +69,7 @@
     "category": "Driver",
     "name": "Apply/Onboard",
     "status": "PASS",
-    "detail": "201 driverId=6a328322d9f36732353ecd7f"
+    "detail": "201 driverId=6a4dde018d2c4f45f6c106fc"
   },
   {
     "category": "Driver",
@@ -105,7 +105,7 @@
     "category": "Ride",
     "name": "Book",
     "status": "PASS",
-    "detail": "201 rideId=6a328322d9f36732353ecd8a otp=yes"
+    "detail": "201 rideId=6a4dde018d2c4f45f6c10717 otp=yes"
   },
   {
     "category": "Ride",

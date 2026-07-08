@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Driver = require("../models/Driver");
 const DriverApplication = require("../models/DriverApplication");
 const AdminAuditLog = require("../models/AdminAuditLog");
@@ -166,11 +167,31 @@ const verifyDocument = async (req, res) => {
   }
 };
 
+// Helper function to resolve DriverApplication by ID, Driver ID, or User ID
+const resolveDriverApplication = async (id) => {
+  if (!id || !mongoose.Types.ObjectId.isValid(id)) return null;
+
+  // 1. Try by Application ID
+  let application = await DriverApplication.findById(id).populate("userId", "name email");
+  if (application) return application;
+
+  // 2. Try by Driver ID
+  const driver = await Driver.findById(id);
+  if (driver) {
+    application = await DriverApplication.findOne({ userId: driver.userId }).populate("userId", "name email");
+    if (application) return application;
+  }
+
+  // 3. Try by User ID
+  application = await DriverApplication.findOne({ userId: id }).populate("userId", "name email");
+  return application;
+};
+
 // ─── APPROVE APPLICATION ──────────────────────────────────────────────────────
 const approveDriverApplication = async (req, res) => {
   try {
     const adminId = req.user.id;
-    const application = await DriverApplication.findById(req.params.id).populate("userId", "name email");
+    const application = await resolveDriverApplication(req.params.id);
     if (!application) {
       return res.status(404).json({ success: false, message: "Driver application not found" });
     }
@@ -251,7 +272,7 @@ const rejectDriverApplication = async (req, res) => {
       return res.status(400).json({ success: false, message: "Rejection reason is mandatory" });
     }
 
-    const application = await DriverApplication.findById(req.params.id).populate("userId", "name email");
+    const application = await resolveDriverApplication(req.params.id);
     if (!application) {
       return res.status(404).json({ success: false, message: "Driver application not found" });
     }
@@ -301,7 +322,7 @@ const requestChangesDriverApplication = async (req, res) => {
       return res.status(400).json({ success: false, message: "Feedback comments are mandatory when requesting changes" });
     }
 
-    const application = await DriverApplication.findById(req.params.id).populate("userId", "name email");
+    const application = await resolveDriverApplication(req.params.id);
     if (!application) {
       return res.status(404).json({ success: false, message: "Driver application not found" });
     }
