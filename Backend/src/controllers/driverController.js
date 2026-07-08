@@ -235,22 +235,39 @@ const getStatus = async (req, res, next) => {
 
 // ─── TOGGLE STATUS ───────────────────────────────────────────────────────────
 const toggleStatus = async (req, res, next) => {
+  const userId = req.user?.id;
+  const role = req.user?.role;
+  const { isOnline } = req.body;
+
+  console.log(`[Driver ToggleStatus] Incoming request: User=${userId}, Role=${role}, Body=`, req.body);
+
   try {
-    const { isOnline } = req.body;
     if (typeof isOnline !== "boolean") {
+      console.warn(`[Driver ToggleStatus] Bad Request: isOnline is not a boolean (${typeof isOnline})`);
       return res.status(400).json({ success: false, message: "isOnline must be a boolean" });
     }
 
-    const driver = await Driver.findOne({ userId: req.user.id, isDeleted: false });
+    console.log(`[Driver ToggleStatus] Querying Driver document for userId=${userId}`);
+    const driver = await Driver.findOne({ userId, isDeleted: false });
+    
     if (!driver) {
+      console.warn(`[Driver ToggleStatus] Driver profile not found for userId=${userId}`);
       return res.status(404).json({ success: false, message: "Driver profile not found" });
     }
+
+    console.log(`[Driver ToggleStatus] Found Driver profile ID=${driver._id}, onboardingStatus=${driver.onboardingStatus}`);
+
     if (driver.onboardingStatus !== "APPROVED") {
+      console.warn(`[Driver ToggleStatus] Blocked: Driver is not approved (status=${driver.onboardingStatus})`);
       return res.status(403).json({ success: false, message: "Driver not approved yet. Please wait for admin approval." });
     }
 
+    const previousStatus = driver.isAvailable;
     driver.isAvailable = isOnline;
+    
+    console.log(`[Driver ToggleStatus] Saving updated driver availability state from ${previousStatus} to ${isOnline}`);
     await driver.save();
+    console.log(`[Driver ToggleStatus] Driver ID=${driver._id} successfully saved. New availability: ${driver.isAvailable}`);
 
     return res.status(200).json({
       success: true,
@@ -258,6 +275,7 @@ const toggleStatus = async (req, res, next) => {
       isAvailable: driver.isAvailable,
     });
   } catch (err) {
+    console.error(`[Driver ToggleStatus] FAILED to toggle availability status for userId=${userId}:`, err);
     next(err);
   }
 };

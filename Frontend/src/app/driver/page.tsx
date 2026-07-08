@@ -56,12 +56,12 @@ export default function DriverDashboard() {
     const fetchInitialData = async () => {
       try {
         const statusData = await driverService.getStatus();
-        if (statusData && statusData.onboardingStatus !== 'APPROVED') {
+        if (!statusData || statusData.onboardingStatus !== 'APPROVED') {
           router.push('/driver/onboarding');
           return;
         }
 
-        setIsOnline(statusData.isAvailable);
+        setIsOnline(statusData.isAvailable || false);
 
         if (statusData.currentRideId) {
           const rideDetails = await rideService.getRide(statusData.currentRideId);
