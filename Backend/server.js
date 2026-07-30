@@ -3,7 +3,8 @@ const http = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-require("dotenv").config();
+require("dotenv").config();  
+
 
 const connectDB = require("./src/config/db");
 const errorHandler = require("./src/middlewares/errorHandler");
@@ -15,7 +16,6 @@ const { razorpayWebhook } = require("./src/controllers/paymentController");
 
 const app = express();
 const server = http.createServer(app);
-
 app.set("trust proxy", true);
 
 const io = new Server(server, {
