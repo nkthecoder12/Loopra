@@ -2,6 +2,7 @@ const HARDCODED_ALLOWED_ORIGINS = [
   "https://www.loopra.co.in",
   "https://loopra.co.in",
   "https://loopra-gamma.vercel.app",
+  "https://fleet.loopra.co.in",
   "http://localhost:3000",
   "http://localhost:3001",
 ];
