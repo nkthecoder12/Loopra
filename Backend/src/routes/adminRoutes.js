@@ -15,6 +15,7 @@ const {
   approveDriver,
   rejectDriver,
   deactivateDriver,
+  createFleet,
 } = require("../controllers/admin");
 
 // All admin routes strictly require AUTH + ADMIN role
@@ -23,6 +24,7 @@ router.use(authMiddleware, roleMiddleware("ADMIN"));
 // Core Data Routes
 router.get("/users", getUsers);
 router.get("/drivers", getDrivers);
+router.post("/fleet", createFleet);
 
 // Driver Applications Module Routes
 router.get("/driver-applications", getDriverApplications);

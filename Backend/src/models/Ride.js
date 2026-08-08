@@ -28,6 +28,20 @@ const rideSchema = new mongoose.Schema(
       index: true
     },
 
+    fleetId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Fleet",
+      default: null,
+      index: true
+    },
+
+    vehicleId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Vehicle",
+      default: null,
+      index: true
+    },
+
     pickupLocation: {
       type: locationSchema,
       required: true

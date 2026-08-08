@@ -160,7 +160,7 @@ const acceptRide = async (req, res, next) => {
           { status: RIDE_STATUS.DRIVER_ASSIGNED, driverId: driver._id }
         ]
       },
-      { $set: { status: RIDE_STATUS.DRIVER_ASSIGNED, driverId: driver._id, otp } },
+      { $set: { status: RIDE_STATUS.DRIVER_ASSIGNED, driverId: driver._id, fleetId: driver.fleetId || null, vehicleId: driver.vehicleId || null, otp } },
       { new: true }
     );
 
@@ -168,8 +168,12 @@ const acceptRide = async (req, res, next) => {
       return res.status(409).json({ success: false, message: "Ride no longer available" });
     }
 
-    // Mark driver as busy and link current ride
-    await Driver.findByIdAndUpdate(driver._id, { isAvailable: false, currentRideId: ride._id });
+    // Mark driver as busy and link current ride / reserved ride depending on type
+    if (ride.type === "SCHEDULED") {
+      await Driver.findByIdAndUpdate(driver._id, { reservedRideId: ride._id });
+    } else {
+      await Driver.findByIdAndUpdate(driver._id, { isAvailable: false, currentRideId: ride._id });
+    }
 
     // Emit domain event for ride assignment
     notificationEventBus.emit("ride.assigned", {

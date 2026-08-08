@@ -47,6 +47,8 @@ const driverSchema = new mongoose.Schema(
     // Ride references
     currentRideId: { type: mongoose.Schema.Types.ObjectId, ref: "Ride", default: null },
     reservedRideId: { type: mongoose.Schema.Types.ObjectId, ref: "Ride", default: null },
+    fleetId: { type: mongoose.Schema.Types.ObjectId, ref: "Fleet", default: null, index: true },
+    vehicleId: { type: mongoose.Schema.Types.ObjectId, ref: "Vehicle", default: null, index: true },
 
     // Earnings summary (updated on ride completion)
     earnings: {

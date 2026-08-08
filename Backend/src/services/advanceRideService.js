@@ -139,6 +139,8 @@ const processDriverResponse = async (driverId, rideBId, acceptRideA, acceptRideB
             { 
               $set: { 
                 driverId, 
+                fleetId: driver.fleetId || null,
+                vehicleId: driver.vehicleId || null,
                 assignmentStage: "ASSIGNED",
                 status: RIDE_STATUS.DRIVER_ASSIGNED
               } 
@@ -150,6 +152,8 @@ const processDriverResponse = async (driverId, rideBId, acceptRideA, acceptRideB
             { 
               $set: { 
                 driverId, 
+                fleetId: driver.fleetId || null,
+                vehicleId: driver.vehicleId || null,
                 assignmentStage: "ASSIGNED",
                 status: RIDE_STATUS.DRIVER_ASSIGNED
               } 

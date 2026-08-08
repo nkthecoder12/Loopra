@@ -9,7 +9,7 @@ const otpService = require("../services/otpService");
 
 const signToken = (user) => {
   const role = (user.role || "USER").toUpperCase();
-  return jwt.sign({ id: user._id, role }, jwtSecret, { expiresIn: "7d" });
+  return jwt.sign({ id: user._id, role, fleetId: user.fleetId || null }, jwtSecret, { expiresIn: "7d" });
 };
 
 const isProduction = process.env.NODE_ENV === "production";
@@ -86,7 +86,7 @@ const login = async (req, res) => {
       success: true,
       message: "Login successful",
       token,
-      user: { id: user._id, name: user.name, email: user.email, role: user.role, profileImage: user.profileImage, isVerified: user.isVerified }
+      user: { id: user._id, name: user.name, email: user.email, role: user.role, fleetId: user.fleetId || null, profileImage: user.profileImage, isVerified: user.isVerified }
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: "Error logging in", error: error.message });
@@ -155,7 +155,7 @@ const verifyOtp = async (req, res) => {
       success: true,
       message: "Verification successful",
       token,
-      user: { id: user._id, name: user.name, email: user.email, role: user.role }
+      user: { id: user._id, name: user.name, email: user.email, role: user.role, fleetId: user.fleetId || null }
     });
   } catch (error) {
     return res.status(400).json({ success: false, message: error.message });
@@ -213,7 +213,7 @@ const refreshToken = async (req, res) => {
     }
     const newToken = signToken(user);
     setCookie(res, newToken);
-    return res.status(200).json({ success: true, token: newToken, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
+    return res.status(200).json({ success: true, token: newToken, user: { id: user._id, name: user.name, email: user.email, role: user.role, fleetId: user.fleetId || null } });
   } catch (error) {
     return res.status(401).json({ success: false, message: "Invalid or expired token" });
   }
@@ -237,4 +237,51 @@ const testEmail = async (req, res) => {
   }
 };
 
-module.exports = { signup, login, logout, sendotp, verifyOtp, getMe, forgotPassword, refreshToken, testEmail };
+// ─── SETUP PASSWORD ──────────────────────────────────────────────────────────
+const setupPassword = async (req, res, next) => {
+  const { token, password } = req.body;
+  if (!token || !password) {
+    return res.status(400).json({ success: false, message: "Token and password are required" });
+  }
+
+  try {
+    const user = await usermodel.findOne({
+      activationToken: token,
+      activationTokenExpires: { $gt: new Date() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: "Invalid or expired activation link" });
+    }
+
+    // Set new password
+    const hashedPassword = await bcrypt.hash(password, 10);
+    user.password = hashedPassword;
+    user.activationToken = null;
+    user.activationTokenExpires = null;
+    user.isVerified = true; // Auto verify on activation link click
+    await user.save();
+
+    // Authenticate immediately
+    const loginToken = signToken(user);
+    setCookie(res, loginToken);
+
+    return res.status(200).json({
+      success: true,
+      message: "Password configured successfully",
+      token: loginToken,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        fleetId: user.fleetId || null
+      }
+    });
+  } catch (error) {
+    console.error("[setupPassword Error]:", error);
+    return res.status(500).json({ success: false, message: "Server error configuring password" });
+  }
+};
+
+module.exports = { signup, login, logout, sendotp, verifyOtp, getMe, forgotPassword, refreshToken, testEmail, setupPassword };

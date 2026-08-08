@@ -52,6 +52,7 @@ app.use("/api/notifications", require("./src/routes/notificationRoutes"));
 app.use("/api/tracking", require("./src/routes/trackingRoutes"));
 app.use("/api/admin", require("./src/routes/adminRoutes"));
 app.use("/api/driver", require("./src/routes/driverRoutes"));
+app.use("/api/fleet", require("./src/routes/fleetRoutes"));
 
 app.get("/api/health", (req, res) =>
   res.json({

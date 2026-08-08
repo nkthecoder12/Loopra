@@ -99,6 +99,8 @@ const createRide = async (userId, data, io) => {
             {
               userId,
               driverId: driver ? driver._id : null,
+              fleetId: driver ? driver.fleetId : null,
+              vehicleId: driver ? driver.vehicleId : null,
               pickupLocation,
               dropLocation,
               fare,
@@ -117,6 +119,8 @@ const createRide = async (userId, data, io) => {
             {
               userId,
               driverId: driver ? driver._id : null,
+              fleetId: driver ? driver.fleetId : null,
+              vehicleId: driver ? driver.vehicleId : null,
               pickupLocation,
               dropLocation,
               fare,

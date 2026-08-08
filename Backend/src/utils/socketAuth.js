@@ -17,8 +17,16 @@ const socketAuth = async (socket, next) => {
     // Attach user info to socket
     socket.user = {
       userId: decoded.id || decoded.userId,
-      role: decoded.role || "USER"
+      role: decoded.role || "USER",
+      fleetId: decoded.fleetId || null
     };
+
+    // If the socket belongs to a FLEET_OPERATOR, automatically join them to their fleet room
+    if (socket.user.role === "FLEET_OPERATOR" && socket.user.fleetId) {
+      const fleetRoom = `fleet_${socket.user.fleetId}`;
+      socket.join(fleetRoom);
+      console.log(`[Socket] Fleet Operator ${socket.user.userId} auto-joined room ${fleetRoom}`);
+    }
 
     next();
   } catch (error) {

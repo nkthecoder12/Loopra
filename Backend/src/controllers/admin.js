@@ -430,6 +430,161 @@ const deactivateDriver = async (req, res) => {
   return updateDriverLifecycle(req, res);
 };
 
+// ─── CREATE FLEET & OPERATOR (SUPER ADMIN) ──────────────────────────────────
+const createFleet = async (req, res, next) => {
+  const { name, operatorName, email, phone } = req.body;
+  const adminId = req.user.id;
+
+  if (!name || !operatorName || !email || !phone) {
+    return res.status(400).json({ success: false, message: "All fields are required" });
+  }
+
+  const normalizedEmail = email.toLowerCase().trim();
+  const session = await mongoose.startSession();
+  const useTransaction = ["ReplicaSetWithPrimary", "ReplicaSetNoPrimary", "Sharded"].includes(
+    mongoose.connection?.client?.topology?.description?.type
+  );
+  if (useTransaction) {
+    session.startTransaction();
+  }
+
+  try {
+    const existingUser = useTransaction
+      ? await User.findOne({ email: normalizedEmail }).session(session)
+      : await User.findOne({ email: normalizedEmail });
+
+    if (existingUser) {
+      if (useTransaction) {
+        await session.abortTransaction();
+      }
+      session.endSession();
+      return res.status(409).json({ success: false, message: "Email is already registered" });
+    }
+
+    const crypto = require("crypto");
+    const activationToken = crypto.randomBytes(32).toString("hex");
+    const activationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    // Generate a temporary strong password that will be overridden
+    const bcrypt = require("bcryptjs");
+    const tempPassword = await bcrypt.hash(crypto.randomBytes(16).toString("hex"), 10);
+
+    const newUserArray = useTransaction
+      ? await User.create(
+          [
+            {
+              name: operatorName.trim(),
+              email: normalizedEmail,
+              password: tempPassword,
+              role: "FLEET_OPERATOR",
+              isVerified: false,
+              activationToken,
+              activationTokenExpires,
+            },
+          ],
+          { session }
+        )
+      : await User.create(
+          [
+            {
+              name: operatorName.trim(),
+              email: normalizedEmail,
+              password: tempPassword,
+              role: "FLEET_OPERATOR",
+              isVerified: false,
+              activationToken,
+              activationTokenExpires,
+            },
+          ]
+        );
+
+    const newUser = newUserArray[0];
+
+    const Fleet = require("../models/Fleet");
+    const newFleetArray = useTransaction
+      ? await Fleet.create(
+          [
+            {
+              name: name.trim(),
+              ownerId: newUser._id,
+              status: "ACTIVE",
+              contactInfo: { phone: phone.trim(), email: normalizedEmail },
+            },
+          ],
+          { session }
+        )
+      : await Fleet.create(
+          [
+            {
+              name: name.trim(),
+              ownerId: newUser._id,
+              status: "ACTIVE",
+              contactInfo: { phone: phone.trim(), email: normalizedEmail },
+            },
+          ]
+        );
+
+    const newFleet = newFleetArray[0];
+
+    // Link user to fleet
+    newUser.fleetId = newFleet._id;
+    await newUser.save({ session });
+
+    if (useTransaction) {
+      await session.commitTransaction();
+    }
+    session.endSession();
+
+    // Send invitation email via Resend
+    const sendEmail = require("../utils/sendmail");
+    const fleetFrontendUrl = process.env.FLEET_FRONTEND_URL || "http://localhost:3001";
+    const activationLink = `${fleetFrontendUrl}/setup-password?token=${activationToken}`;
+
+    try {
+      await sendEmail(
+        normalizedEmail,
+        "Welcome to Loopra Fleet — Set Up Your Account",
+        `Hello ${operatorName},\n\nYou have been invited to manage your fleet "${name}" on Loopra Fleet Operator Platform.\n\nPlease click the link below to configure your password and activate your account:\n\n${activationLink}\n\nThis activation link is valid for 24 hours.`,
+        `<div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+          <h2 style="color: #4F46E5;">Welcome to Loopra Fleet Platform</h2>
+          <p>Hello <strong>${operatorName}</strong>,</p>
+          <p>You have been registered as the Fleet Operator for <strong>${name}</strong>.</p>
+          <p>Click the button below to set up your password and access your new control console:</p>
+          <div style="margin: 30px 0;">
+            <a href="${activationLink}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Set Up Your Account</a>
+          </div>
+          <p style="color: #666; font-size: 12px;">This link will expire in 24 hours.</p>
+        </div>`
+      );
+    } catch (emailErr) {
+      console.error("Failed to send operator setup email:", emailErr.message);
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: "Fleet and Operator created successfully. Activation link dispatched.",
+      data: {
+        fleetId: newFleet._id,
+        fleetName: newFleet.name,
+        operator: {
+          id: newUser._id,
+          name: newUser.name,
+          email: newUser.email,
+        },
+        activationLink,
+      },
+    });
+  } catch (error) {
+    if (useTransaction) {
+      try {
+        await session.abortTransaction();
+      } catch (_) {}
+    }
+    session.endSession();
+    next(error);
+  }
+};
+
 module.exports = {
   getUsers,
   getDrivers,
@@ -443,4 +598,5 @@ module.exports = {
   approveDriver,
   rejectDriver,
   deactivateDriver,
+  createFleet,
 };

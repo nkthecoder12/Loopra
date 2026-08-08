@@ -15,8 +15,22 @@ const UserSchema=new mongoose.Schema({
     resetotpexpiresat:{type:Number,default:0},
     role:{
         type:String,
-        enum: ["USER", "DRIVER", "ADMIN"],
+        enum: ["USER", "DRIVER", "ADMIN", "FLEET_OPERATOR"],
         default:"USER"
+    },
+    fleetId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Fleet",
+        default: null,
+        index: true
+    },
+    activationToken: {
+        type: String,
+        default: null
+    },
+    activationTokenExpires: {
+        type: Date,
+        default: null
     },
     createdAt:{type:Date,default:Date.now},
     updatedAt:{type:Date,default:Date.now},

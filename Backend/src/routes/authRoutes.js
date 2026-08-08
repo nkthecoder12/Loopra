@@ -1,6 +1,6 @@
 const express = require("express");
 const authrouter = express.Router();
-const { signup, login, logout, sendotp, verifyOtp, getMe, forgotPassword, refreshToken, testEmail } = require("../controllers/authController");
+const { signup, login, logout, sendotp, verifyOtp, getMe, forgotPassword, refreshToken, testEmail, setupPassword } = require("../controllers/authController");
 const { uploadProfileImage } = require("../controllers/imageupload");
 const upload = require("../middlewares/uploadMiddleware");
 const authMiddleware = require("../middlewares/authMiddleware");
@@ -22,6 +22,7 @@ authrouter.post("/send-otp", sendOtpLimiter, sendotp);
 authrouter.post("/verifyotp", verifyOtpLimiter, verifyOtp);
 authrouter.post("/verify-otp", verifyOtpLimiter, verifyOtp);
 
+authrouter.post("/fleet/setup-password", setupPassword);
 authrouter.post("/uploadprofileimage", authMiddleware, upload.single("profileImage"), uploadProfileImage);
 
 module.exports = authrouter;
